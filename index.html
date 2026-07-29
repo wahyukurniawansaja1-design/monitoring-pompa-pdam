@@ -158,7 +158,7 @@
       </div>
       <div>
         <h1>Monitoring Pompa PDAM</h1>
-        <div class="subtitle">Sistem Produksi &middot; Untuk Akses Jarak Jauh</div>
+        <div class="subtitle">Sistem distribusi air &middot; akses jarak jauh</div>
       </div>
     </div>
     <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">Menghubungkan...</span></div>
@@ -187,6 +187,8 @@
       <h3>Total Durasi Kumulatif</h3>
       <div class="row"><span>Total ON</span><span class="val blue" id="totalOn">-</span></div>
       <div class="row"><span>Total OFF</span><span class="val off" id="totalOff">-</span></div>
+      <div class="subtitle" id="resetInfo" style="margin-top:8px;">-</div>
+      <button class="save-btn" id="resetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Total</button>
     </div>
     <div class="card">
       <h3>Rasio Operasi 24 Jam</h3>
@@ -249,7 +251,8 @@ let state = {
   config: { daya_pompa_watt: 750, tarif_listrik: 1444.7, batas_short_cycling: 6, batas_over_running: 480 },
   alerts: [],
   lastSeen: null,
-  deviceOnline: null
+  deviceOnline: null,
+  resetAt: null // titik waktu terakhir "reset" total ON/OFF (histori mentah tetap utuh)
 };
 const OFFLINE_THRESHOLD_MS = 60000; // dianggap offline jika heartbeat terakhir >60 detik lalu
 
@@ -284,6 +287,13 @@ async function fetchDeviceStatus(){
   if(rows.length > 0) state.lastSeen = new Date(rows[0].last_seen);
 }
 
+async function fetchResetPoint(){
+  const res = await fetch(`${REST}/reset_point?id=eq.1&select=*`, { headers: HEADERS });
+  if(!res.ok) throw new Error("Gagal mengambil reset_point (cek tabel & RLS policy)");
+  const rows = await res.json();
+  if(rows.length > 0) state.resetAt = new Date(rows[0].reset_at);
+}
+
 async function fetchEvents(){
   const res = await fetch(`${REST}/pump_events?select=*&order=event_time.asc&limit=5000`, { headers: HEADERS });
   if(!res.ok) throw new Error("Gagal mengambil pump_events (cek publishable key & RLS policy)");
@@ -294,14 +304,18 @@ function computeMetrics(events){
   if(!events || events.length === 0) return;
   const now = new Date();
   const cutoff24h = new Date(now.getTime() - 24*3600*1000);
+  const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
   let totalOnMsBase = 0, totalOffMsBase = 0, last24hOnMs = 0;
   let lastOn = null, lastOff = null;
 
   // Segmen yang SUDAH SELESAI saja (bukan segmen terakhir yang masih berjalan)
+  // Setiap segmen di-clamp ke titik reset - jadi histori mentah tetap utuh,
+  // tapi total yang ditampilkan cuma menghitung sejak reset terakhir
   for(let i=0;i<events.length-1;i++){
     const start = new Date(events[i].event_time);
     const end = new Date(events[i+1].event_time);
-    const durMs = end - start;
+    const clampedStartMs = Math.max(start.getTime(), resetAtMs);
+    const durMs = Math.max(0, end.getTime() - clampedStartMs);
     const isOn = events[i].event_type === 'ON';
 
     if(isOn) totalOnMsBase += durMs; else totalOffMsBase += durMs;
@@ -345,6 +359,7 @@ function computeMetrics(events){
 function renderStatic(){
   document.getElementById('lastOn').textContent = fmtDateTime(state.lastOn);
   document.getElementById('lastOff').textContent = fmtDateTime(state.lastOff);
+  document.getElementById('resetInfo').textContent = state.resetAt ? `Dihitung sejak: ${fmtDateTime(state.resetAt)}` : 'Belum pernah direset';
 
   const ratio = Math.min(100, Math.max(0, state.ratio24h));
   document.getElementById('ratioValue').textContent = ratio.toFixed(1) + '%';
@@ -406,9 +421,11 @@ function renderLive(){
   }
 
   // Total durasi kumulatif ikut bertambah tiap detik - tapi berhenti bertambah
-  // kalau ESP32 offline (durMs sudah dibekukan di atas)
-  const liveTotalOn = state.totalOnMsBase + (state.currentStatus ? durMs : 0);
-  const liveTotalOff = state.totalOffMsBase + (!state.currentStatus ? durMs : 0);
+  // kalau ESP32 offline (durMs sudah dibekukan di atas), dan di-clamp ke titik reset
+  const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
+  const contribMs = Math.max(0, referenceNow.getTime() - Math.max(state.currentStart.getTime(), resetAtMs));
+  const liveTotalOn = state.totalOnMsBase + (state.currentStatus ? contribMs : 0);
+  const liveTotalOff = state.totalOffMsBase + (!state.currentStatus ? contribMs : 0);
   document.getElementById('totalOn').textContent = fmtDuration(liveTotalOn);
   document.getElementById('totalOff').textContent = fmtDuration(liveTotalOff);
 
@@ -423,6 +440,7 @@ async function fetchAndRender(){
   try{
     await fetchConfig();
     await fetchDeviceStatus();
+    await fetchResetPoint();
     state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
 
     const events = await fetchEvents();
@@ -461,6 +479,22 @@ document.getElementById('saveConfigBtn').addEventListener('click', async () => {
     setTimeout(() => note.textContent = '', 2500);
   } catch(err){
     note.textContent = 'Gagal menyimpan konfigurasi.';
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  const yakin = confirm('Reset total ON/OFF sekarang? Histori data mentah tetap tersimpan, tapi angka Total ON/OFF akan mulai dihitung ulang dari titik ini.');
+  if(!yakin) return;
+  try{
+    const res = await fetch(`${REST}/reset_point?id=eq.1`, {
+      method: 'PATCH',
+      headers: { ...HEADERS, "Prefer": "return=minimal" },
+      body: JSON.stringify({ id: 1 })
+    });
+    if(!res.ok) throw new Error('Gagal reset');
+    await fetchAndRender();
+  } catch(err){
+    alert('Gagal mereset total. Coba lagi.');
   }
 });
 
