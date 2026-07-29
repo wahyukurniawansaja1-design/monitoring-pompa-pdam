@@ -142,6 +142,17 @@
   .save-btn:hover{ background: var(--blue-deep); }
   .save-note{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--ink-dim); margin-top:8px; }
 
+  .history-table{ width:100%; border-collapse: collapse; margin-top:10px; font-size:13px; }
+  .history-table th{
+    text-align:left; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color: var(--ink-dim); padding: 6px 10px; border-bottom:1px solid var(--border);
+  }
+  .history-table td{ padding: 8px 10px; border-bottom:1px solid var(--border); font-family:'IBM Plex Mono', monospace; }
+  .history-scroll{ max-height: 320px; overflow-y: auto; }
+  .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11.5px; font-weight:600; }
+  .badge.on{ background: var(--blue-tint); color: var(--blue); }
+  .badge.off{ background: #F1F3F8; color: var(--ink-dim); }
+
   .banner{
     background: #FDEAE6; border:1px solid rgba(224,80,58,0.3); color: #8A2E1E;
     padding:12px 16px; border-radius:12px; font-size:13px; margin-bottom:18px; display:none;
@@ -158,7 +169,7 @@
       </div>
       <div>
         <h1>Monitoring Pompa PDAM</h1>
-        <div class="subtitle">Sistem distribusi air &middot; akses jarak jauh</div>
+        <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
       </div>
     </div>
     <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">Menghubungkan...</span></div>
@@ -184,7 +195,7 @@
       <div class="row"><span>Terakhir OFF</span><span class="val off" id="lastOff">-</span></div>
     </div>
     <div class="card">
-      <h3>Total Durasi Kumulatif</h3>
+      <h3>Total Durasi</h3>
       <div class="row"><span>Total ON</span><span class="val blue" id="totalOn">-</span></div>
       <div class="row"><span>Total OFF</span><span class="val off" id="totalOff">-</span></div>
       <div class="subtitle" id="resetInfo" style="margin-top:8px;">-</div>
@@ -222,6 +233,16 @@
     </div>
     <button class="save-btn" id="saveConfigBtn">Simpan konfigurasi</button>
     <div class="save-note" id="configNote"></div>
+  </div>
+  <div class="config" style="margin-top:14px;">
+    <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0;">Riwayat Data Mentah</h3>
+    <div class="subtitle" style="margin-top:4px;">50 kejadian terbaru (data lengkap tetap tersimpan di Supabase)</div>
+    <div class="history-scroll">
+      <table class="history-table">
+        <thead><tr><th>Status</th><th>Waktu Kejadian</th></tr></thead>
+        <tbody id="historyBody"><tr><td colspan="2">Memuat...</td></tr></tbody>
+      </table>
+    </div>
   </div>
 
 </div>
@@ -436,6 +457,19 @@ function renderLive(){
   document.getElementById('rupiahValue').textContent = 'Rp ' + Math.round(rupiah).toLocaleString('id-ID');
 }
 
+function renderHistoryTable(events){
+  const body = document.getElementById('historyBody');
+  if(!events || events.length === 0){
+    body.innerHTML = '<tr><td colspan="2">Belum ada data.</td></tr>';
+    return;
+  }
+  const terbaru = events.slice(-50).reverse(); // 50 terbaru, urutan descending
+  body.innerHTML = terbaru.map(e => {
+    const isOn = e.event_type === 'ON';
+    return `<tr><td><span class="badge ${isOn ? 'on':'off'}">${isOn ? 'NYALA':'MATI'}</span></td><td>${fmtDateTime(new Date(e.event_time))}</td></tr>`;
+  }).join('');
+}
+
 async function fetchAndRender(){
   try{
     await fetchConfig();
@@ -445,6 +479,7 @@ async function fetchAndRender(){
 
     const events = await fetchEvents();
     computeMetrics(events);
+    renderHistoryTable(events);
 
     if(!state.deviceOnline){
       state.alerts.unshift(`ESP32 tidak terhubung sejak ${fmtDateTime(state.lastSeen)} — status pompa dianggap tidak diketahui`);
