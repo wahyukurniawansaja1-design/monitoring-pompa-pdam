@@ -158,7 +158,7 @@
       </div>
       <div>
         <h1>Monitoring Pompa PDAM</h1>
-        <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
+        <div class="subtitle">Sistem Produksi &middot; Akses Jarak Jauh</div>
       </div>
     </div>
     <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">Menghubungkan...</span></div>
@@ -229,7 +229,7 @@
 // KONFIGURASI SUPABASE - ganti dengan milik kamu sendiri
 // =====================================================
 const SUPABASE_URL = "https://tnixluzpewwamhqmapyd.supabase.co";
-const SUPABASE_KEY = "sb_publishable_0n73qqXBYCSuuIv3rdkG8A_YbvFVTRX";
+const SUPABASE_KEY = "GANTI_DENGAN_PUBLISHABLE_KEY_KAMU";
 
 const REST = `${SUPABASE_URL}/rest/v1`;
 const HEADERS = {
@@ -333,9 +333,9 @@ function computeMetrics(events){
   const onCountLastHour = events.filter(e => e.event_type === 'ON' && new Date(e.event_time) >= oneHourAgo).length;
   const shortCycling = onCountLastHour > state.config.batas_short_cycling;
 
-  // Smart alert: over running
+  // Smart alert: over running (skip kalau ESP32 sedang offline - statusnya tidak bisa dipercaya)
   const currentDurationMin = (now - state.currentStart) / 60000;
-  const overRunning = state.currentStatus && currentDurationMin > state.config.batas_over_running;
+  const overRunning = state.deviceOnline !== false && state.currentStatus && currentDurationMin > state.config.batas_over_running;
 
   state.alerts = [];
   if(shortCycling) state.alerts.push(`Short cycling: pompa nyala ${onCountLastHour}x dalam 1 jam terakhir (batas ${state.config.batas_short_cycling}x)`);
@@ -367,7 +367,6 @@ function renderStatic(){
 function renderLive(){
   if(state.currentStart === null) return;
   const now = new Date();
-  const durMs = now - state.currentStart;
 
   const statusEl = document.getElementById('statusValue');
   const subEl = document.getElementById('durationLive');
@@ -375,20 +374,39 @@ function renderLive(){
   const label = document.getElementById('liveLabel');
   const badge = document.getElementById('valveBadge');
 
-  if(state.currentStatus){
+  // Kalau ESP32 offline, hentikan hitungan di titik heartbeat terakhir yang diketahui -
+  // supaya dashboard tidak seolah-olah masih "hidup" menghitung status yang sudah basi
+  const referenceNow = (state.deviceOnline === false && state.lastSeen) ? state.lastSeen : now;
+  const durMs = referenceNow - state.currentStart;
+
+  if(state.deviceOnline === false){
+    statusEl.textContent = 'TIDAK DIKETAHUI';
+    statusEl.className = 'status-value off';
+    badge.classList.remove('on');
+    dot.classList.remove('on');
+    dot.classList.add('offline');
+    label.textContent = 'ESP32 Offline';
+    subEl.textContent = `data terakhir: ${fmtDateTime(state.lastSeen)}`;
+  } else if(state.currentStatus){
     statusEl.textContent = 'NYALA';
     statusEl.className = 'status-value on';
     badge.classList.add('on');
     dot.classList.add('on');
+    dot.classList.remove('offline');
+    label.textContent = 'Live';
+    subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
   } else {
     statusEl.textContent = 'MATI';
     statusEl.className = 'status-value off';
     badge.classList.remove('on');
     dot.classList.remove('on');
+    dot.classList.remove('offline');
+    label.textContent = 'Live';
+    subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
   }
-  subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
 
-  // Total durasi kumulatif ikut bertambah tiap detik mengikuti status yang sedang berjalan
+  // Total durasi kumulatif ikut bertambah tiap detik - tapi berhenti bertambah
+  // kalau ESP32 offline (durMs sudah dibekukan di atas)
   const liveTotalOn = state.totalOnMsBase + (state.currentStatus ? durMs : 0);
   const liveTotalOff = state.totalOffMsBase + (!state.currentStatus ? durMs : 0);
   document.getElementById('totalOn').textContent = fmtDuration(liveTotalOn);
@@ -399,27 +417,19 @@ function renderLive(){
   const rupiah = kWh * state.config.tarif_listrik;
   document.getElementById('kwhValue').textContent = kWh.toFixed(2) + ' kWh';
   document.getElementById('rupiahValue').textContent = 'Rp ' + Math.round(rupiah).toLocaleString('id-ID');
-
-  dot.classList.remove('offline');
-  if(state.deviceOnline === false){
-    dot.classList.remove('on');
-    dot.classList.add('offline');
-    label.textContent = 'ESP32 Offline';
-  } else {
-    label.textContent = 'Live';
-  }
 }
 
 async function fetchAndRender(){
   try{
     await fetchConfig();
     await fetchDeviceStatus();
+    state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
+
     const events = await fetchEvents();
     computeMetrics(events);
 
-    state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
     if(!state.deviceOnline){
-      state.alerts.unshift(`ESP32 tidak terhubung sejak ${fmtDateTime(state.lastSeen)} — status pompa di bawah mungkin tidak akurat`);
+      state.alerts.unshift(`ESP32 tidak terhubung sejak ${fmtDateTime(state.lastSeen)} — status pompa dianggap tidak diketahui`);
     }
 
     renderStatic();
