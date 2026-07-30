@@ -397,10 +397,19 @@ function renderStatic(){
   document.getElementById('resetInfo').textContent = state.resetAt ? `Dihitung sejak: ${fmtDateTime(state.resetAt)}` : 'Belum pernah direset';
 
   const ratio = Math.min(100, Math.max(0, state.ratio24h));
-  const periodJam = (state.ratioPeriodMs || 24*3600*1000) / 3600000;
-  document.getElementById('ratioValue').textContent = `${ratio.toFixed(1)}% (vs ${periodJam.toFixed(1)} jam)`;
-  document.getElementById('ratioBar').style.width = ratio.toFixed(1) + '%';
-  document.getElementById('ratioNote').textContent = ratio > 60 ? 'Beban kerja tinggi' : ratio > 25 ? 'Beban kerja normal' : 'Beban kerja rendah';
+  const periodMs = state.ratioPeriodMs || 24*3600*1000;
+  const periodJam = periodMs / 3600000;
+  const MINIMAL_PERIODE_MS = 5*60000; // minimal 5 menit data biar rasio bermakna
+
+  if(periodMs < MINIMAL_PERIODE_MS){
+    document.getElementById('ratioValue').textContent = 'Menghitung...';
+    document.getElementById('ratioBar').style.width = '0%';
+    document.getElementById('ratioNote').textContent = `Data baru ${Math.round(periodMs/60000)} menit sejak reset - tunggu beberapa menit lagi`;
+  } else {
+    document.getElementById('ratioValue').textContent = `${ratio.toFixed(1)}% (vs ${periodJam.toFixed(1)} jam)`;
+    document.getElementById('ratioBar').style.width = ratio.toFixed(1) + '%';
+    document.getElementById('ratioNote').textContent = ratio > 60 ? 'Beban kerja tinggi' : ratio > 25 ? 'Beban kerja normal' : 'Beban kerja rendah';
+  }
   document.getElementById('ratioResetInfo').textContent = state.ratioResetAt ? `Direset sejak: ${fmtDateTime(state.ratioResetAt)}` : 'Rasio 24 jam berjalan (belum direset)';
 
   const alertList = document.getElementById('alertList');
