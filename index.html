@@ -123,7 +123,7 @@
       <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>
       <div>
         <h1>Monitoring Pompa PDAM Unit Kuwak</h1>
-        <div class="subtitle">Sistem Produksi Air PDAM &middot; Akses Jarak Jauh</div>
+        <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
       </div>
     </div>
     <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">Menghubungkan...</span></div>
@@ -205,7 +205,9 @@
   <div class="config" style="margin-top:14px;">
     <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0;">Riwayat Harian Bulan Ini</h3>
     <div class="subtitle" id="monthlyTotal" style="margin-top:4px; font-weight:600; color:var(--blue);">-</div>
-    <div class="history-scroll">
+    <div class="subtitle" id="monthlyResetInfo" style="margin-top:4px;">-</div>
+    <button class="save-btn" id="monthlyResetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Riwayat Bulanan</button>
+    <div class="history-scroll" style="margin-top:10px;">
       <table class="history-table">
         <thead><tr><th>Tanggal</th><th>Durasi ON</th><th>Energi</th><th>Estimasi Biaya</th></tr></thead>
         <tbody id="monthlyBody"><tr><td colspan="4">Memuat...</td></tr></tbody>
@@ -250,7 +252,8 @@ const PUMPS = {
     config: 'pump_config', configFilter: 'id=eq.1', configPk: { id: 1 },
     device: 'device_status', deviceFilter: 'id=eq.1',
     reset: 'reset_point', resetFilter: 'id=eq.1', resetPk: { id: 1 },
-    ratioReset: 'ratio_reset_point', ratioResetFilter: 'id=eq.1', ratioResetPk: { id: 1 }
+    ratioReset: 'ratio_reset_point', ratioResetFilter: 'id=eq.1', ratioResetPk: { id: 1 },
+    monthlyReset: 'monthly_reset_point', monthlyResetFilter: 'id=eq.1', monthlyResetPk: { id: 1 }
   },
   pompa_2: {
     label: 'Pompa 2',
@@ -258,7 +261,8 @@ const PUMPS = {
     config: 'multi_pump_config', configFilter: 'pump_id=eq.pompa_2', configPk: { pump_id: 'pompa_2' },
     device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_2',
     reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_2', resetPk: { pump_id: 'pompa_2' },
-    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_2', ratioResetPk: { pump_id: 'pompa_2' }
+    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_2', ratioResetPk: { pump_id: 'pompa_2' },
+    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_2', monthlyResetPk: { pump_id: 'pompa_2' }
   },
   pompa_3: {
     label: 'Pompa 3',
@@ -266,7 +270,8 @@ const PUMPS = {
     config: 'multi_pump_config', configFilter: 'pump_id=eq.pompa_3', configPk: { pump_id: 'pompa_3' },
     device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_3',
     reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_3', resetPk: { pump_id: 'pompa_3' },
-    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_3', ratioResetPk: { pump_id: 'pompa_3' }
+    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_3', ratioResetPk: { pump_id: 'pompa_3' },
+    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_3', monthlyResetPk: { pump_id: 'pompa_3' }
   }
 };
 
@@ -279,7 +284,7 @@ function freshState(){
     ratio24h: 0, lastOn: null, lastOff: null,
     config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480 },
     alerts: [], lastSeen: null, deviceOnline: null,
-    resetAt: null, ratioResetAt: null
+    resetAt: null, ratioResetAt: null, monthlyResetAt: null
   };
 }
 let state = freshState();
@@ -356,6 +361,12 @@ async function fetchRatioResetPoint(profile){
   if(!res.ok) throw new Error(`Gagal mengambil ${profile.ratioReset} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.ratioResetAt = new Date(rows[0].reset_at);
+}
+async function fetchMonthlyResetPoint(profile){
+  const res = await fetch(`${REST}/${profile.monthlyReset}?select=*&${profile.monthlyResetFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.monthlyReset} (cek tabel & RLS policy)`);
+  const rows = await res.json();
+  if(rows.length > 0) state.monthlyResetAt = new Date(rows[0].reset_at);
 }
 async function fetchEvents(profile){
   const res = await fetch(`${REST}/${profile.events}?select=*&order=event_time.asc&limit=5000${profile.eventsFilter}`, { headers: HEADERS });
@@ -452,10 +463,12 @@ function computeMetrics(events){
 function computeMonthlyHistory(events){
   if(!events || events.length === 0) return { rows: [], totalKwh: 0, totalRupiah: 0 };
   const now = new Date();
+  const monthlyResetAtMs = state.monthlyResetAt ? state.monthlyResetAt.getTime() : 0;
   const dailyMap = {};
 
-  function addToDay(startMs, endMs){
-    let cursor = startMs; let guard = 0;
+  function addToDay(startMsRaw, endMs){
+    let cursor = Math.max(startMsRaw, monthlyResetAtMs); // clamp ke titik reset bulanan
+    let guard = 0;
     while(cursor < endMs && guard < 1000){
       guard++;
       const d = new Date(cursor);
@@ -500,6 +513,7 @@ function renderMonthlyHistory(events){
   const { rows, totalKwh, totalRupiah } = computeMonthlyHistory(events);
   document.getElementById('monthlyTotal').textContent =
     `Total bulan ini: ${totalKwh.toFixed(2)} kWh (~Rp ${Math.round(totalRupiah).toLocaleString('id-ID')})`;
+  document.getElementById('monthlyResetInfo').textContent = state.monthlyResetAt ? `Dihitung sejak: ${fmtDateTime(state.monthlyResetAt)}` : 'Belum pernah direset';
 
   const body = document.getElementById('monthlyBody');
   if(rows.length === 0){ body.innerHTML = '<tr><td colspan="4">Belum ada data bulan ini.</td></tr>'; return; }
@@ -603,6 +617,7 @@ async function fetchAndRender(){
     state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
     await fetchResetPoint(profile);
     await fetchRatioResetPoint(profile);
+    await fetchMonthlyResetPoint(profile);
 
     const events = await fetchEvents(profile);
     computeMetrics(events);
@@ -667,6 +682,19 @@ document.getElementById('ratioResetBtn').addEventListener('click', async () => {
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
   } catch(err){ alert('Gagal mereset rasio. Coba lagi.'); }
+});
+
+document.getElementById('monthlyResetBtn').addEventListener('click', async () => {
+  const profile = PUMPS[activePump];
+  const yakin = confirm(`Reset riwayat harian bulan ini untuk ${profile.label}? Data mentah tetap tersimpan, tabel ini akan mulai dihitung ulang sejak sekarang.`);
+  if(!yakin) return;
+  try{
+    const res = await fetch(`${REST}/${profile.monthlyReset}?${profile.monthlyResetFilter}`, {
+      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(profile.monthlyResetPk)
+    });
+    if(!res.ok) throw new Error('Gagal reset');
+    await fetchAndRender();
+  } catch(err){ alert('Gagal mereset riwayat bulanan. Coba lagi.'); }
 });
 
 renderTabs();
