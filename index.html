@@ -8,79 +8,62 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #EEF3FA;
-    --card: #FFFFFF;
-    --border: #E1E9F4;
-    --ink: #17233D;
-    --ink-dim: #6B7C99;
-    --blue: #2E5FE8;
-    --blue-deep: #1B3FB0;
-    --blue-tint: #E8EFFE;
-    --teal: #12B3A8;
-    --teal-tint: #E1FAF7;
-    --amber: #E38A2E;
-    --amber-tint: #FDF1E1;
-    --red: #E0503A;
-    --off: #A6B3C7;
+    --bg: #EEF3FA; --card: #FFFFFF; --border: #E1E9F4;
+    --ink: #17233D; --ink-dim: #6B7C99;
+    --blue: #2E5FE8; --blue-deep: #1B3FB0; --blue-tint: #E8EFFE;
+    --teal: #12B3A8; --teal-tint: #E1FAF7;
+    --amber: #E38A2E; --amber-tint: #FDF1E1;
+    --red: #E0503A; --off: #A6B3C7;
+    --navy: #0B1F3A; --navy-deep: #071429;
     --shadow: 0 1px 2px rgba(23,35,61,0.04), 0 8px 24px rgba(23,35,61,0.06);
   }
   *{ box-sizing: border-box; }
-  body{
-    margin:0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', sans-serif;
-    min-height: 100vh;
-    padding: 20px 16px 60px;
-  }
-  .wrap{ max-width: 1080px; margin: 0 auto; }
+  body{ margin:0; background: var(--bg); color: var(--ink); font-family:'Inter',sans-serif; min-height:100vh; padding: 0 0 60px; }
+  .wrap{ max-width: 1080px; margin: 0 auto; padding: 0 16px; }
 
-  header{
-    display:flex; justify-content:space-between; align-items:center;
-    padding: 6px 4px 20px; flex-wrap: wrap; gap: 12px;
+  .navbar{
+    background: linear-gradient(180deg, var(--navy), var(--navy-deep));
+    padding: 14px 16px; margin-bottom: 22px; box-shadow: 0 2px 12px rgba(7,20,41,0.25);
   }
+  .navbar-inner{ max-width: 1080px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+  .navbar .brand{ display:flex; align-items:center; gap:12px; }
+  .navbar .brand-icon{ width:36px; height:36px; border-radius:9px; background: rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.14); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .navbar h1{ font-family:'Manrope', sans-serif; font-size: 16px; font-weight: 800; margin: 0; letter-spacing: -0.01em; color:#fff; }
+  .navbar .subtitle{ font-size:11.5px; color: rgba(255,255,255,0.55); margin-top:1px; }
+  .navbar .live-pill{ background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.14); color: rgba(255,255,255,0.75); }
+
+  footer.app-footer{
+    max-width:1080px; margin: 28px auto 0; padding: 16px 4px 0; border-top:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--ink-dim);
+  }
+
+  .card h3{ display:flex; align-items:center; gap:7px; }
+  .card h3 svg{ width:13px; height:13px; opacity:0.65; }
+
   .brand{ display:flex; align-items:center; gap:12px; }
-  .brand-icon{
-    width:38px; height:38px; border-radius:11px; background: linear-gradient(135deg, var(--blue), var(--blue-deep));
-    display:flex; align-items:center; justify-content:center; flex-shrink:0;
-  }
-  h1{
-    font-family:'Manrope', sans-serif; font-size: 18px; font-weight: 800; margin: 0;
-    letter-spacing: -0.01em;
-  }
+  .brand-icon{ width:38px; height:38px; border-radius:11px; background: linear-gradient(135deg, var(--blue), var(--blue-deep)); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  h1{ font-family:'Manrope', sans-serif; font-size: 18px; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
   .subtitle{ font-size:12px; color: var(--ink-dim); margin-top:1px; }
 
-  .live-pill{
-    display:flex; align-items:center; gap:8px;
-    font-family:'IBM Plex Mono', monospace; font-size:12px; color: var(--ink-dim);
-    background: var(--card); border:1px solid var(--border); padding: 7px 14px 7px 10px; border-radius:20px;
-    box-shadow: var(--shadow);
-  }
+  .live-pill{ display:flex; align-items:center; gap:8px; font-family:'IBM Plex Mono', monospace; font-size:12px; color: var(--ink-dim); background: var(--card); border:1px solid var(--border); padding: 7px 14px 7px 10px; border-radius:20px; box-shadow: var(--shadow); }
   .dot{ width:8px; height:8px; border-radius:50%; background: var(--off); transition: background 0.3s; }
   .dot.on{ background: var(--teal); box-shadow: 0 0 0 4px var(--teal-tint); }
   .dot.offline{ background: var(--red); box-shadow: 0 0 0 4px var(--amber-tint); }
 
-  .hero{
-    display:flex; align-items:center; gap:24px;
-    background: var(--card); border:1px solid var(--border); border-radius:20px;
-    padding: 26px 28px; margin-bottom: 16px; box-shadow: var(--shadow);
-    flex-wrap: wrap;
+  .tabs{ display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:4px; box-shadow: var(--shadow); width:fit-content; }
+  .tab-btn{
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:13px; padding:8px 18px;
+    border-radius:8px; border:none; background: transparent; color: var(--ink-dim);
+    cursor:pointer; transition: all 0.2s;
   }
-  .valve-badge{
-    width:78px; height:78px; border-radius:50%; flex-shrink:0;
-    background: var(--off); display:flex; align-items:center; justify-content:center;
-    transition: background 0.4s;
-    position: relative;
-  }
+  .tab-btn.active{ background: var(--blue); color:#fff; }
+
+  .hero{ display:flex; align-items:center; gap:24px; background: var(--card); border:1px solid var(--border); border-radius:20px; padding: 26px 28px; margin-bottom: 16px; box-shadow: var(--shadow); flex-wrap: wrap; }
+  .valve-badge{ width:78px; height:78px; border-radius:50%; flex-shrink:0; background: var(--off); display:flex; align-items:center; justify-content:center; transition: background 0.4s; position: relative; }
   .valve-badge.on{ background: linear-gradient(135deg, var(--blue), var(--teal)); }
-  .valve-badge.on::after{
-    content:''; position:absolute; inset:-6px; border-radius:50%;
-    border: 2px solid var(--teal); opacity:0; animation: pulse 2s ease-out infinite;
-  }
-  @keyframes pulse{
-    0%{ transform: scale(0.9); opacity:0.6; }
-    100%{ transform: scale(1.25); opacity:0; }
-  }
+  .valve-badge.on::after{ content:''; position:absolute; inset:-6px; border-radius:50%; border: 2px solid var(--teal); opacity:0; animation: pulse 2s ease-out infinite; }
+  @keyframes pulse{ 0%{ transform: scale(0.9); opacity:0.6; } 100%{ transform: scale(1.25); opacity:0; } }
   .valve-badge svg{ width:36px; height:36px; }
 
   .hero-status{ flex: 1; min-width:180px; }
@@ -92,20 +75,10 @@
 
   .grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:14px; margin-bottom:14px; }
   .grid.two{ grid-template-columns: 1fr 1fr; }
-  @media (max-width: 760px){
-    .grid, .grid.two{ grid-template-columns: 1fr; }
-    .hero{ padding: 20px; }
-    .status-value{ font-size: 28px; }
-  }
+  @media (max-width: 760px){ .grid, .grid.two{ grid-template-columns: 1fr; } .hero{ padding: 20px; } .status-value{ font-size: 28px; } }
 
-  .card{
-    background: var(--card); border:1px solid var(--border); border-radius:16px;
-    padding:18px 20px; box-shadow: var(--shadow);
-  }
-  .card h3{
-    font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em;
-    text-transform:uppercase; color: var(--ink-dim); margin:0 0 14px;
-  }
+  .card{ background: var(--card); border:1px solid var(--border); border-radius:16px; padding:18px 20px; box-shadow: var(--shadow); }
+  .card h3{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color: var(--ink-dim); margin:0 0 14px; }
   .row{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:10px; font-size:13.5px; }
   .row:last-child{ margin-bottom:0; }
   .row .val{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
@@ -117,11 +90,7 @@
 
   .metering-value{ font-family:'Manrope', sans-serif; font-size: 24px; font-weight:800; margin: 4px 0; color: var(--blue); }
 
-  .alert-item{
-    display:flex; gap:10px; align-items:flex-start;
-    font-size:13px; padding:11px 12px; border-radius:10px; margin-bottom:8px;
-    background: var(--amber-tint); border:1px solid rgba(227,138,46,0.25); color:#7A4A15;
-  }
+  .alert-item{ display:flex; gap:10px; align-items:flex-start; font-size:13px; padding:11px 12px; border-radius:10px; margin-bottom:8px; background: var(--amber-tint); border:1px solid rgba(227,138,46,0.25); color:#7A4A15; }
   .alert-item.ok{ background: var(--teal-tint); border:1px solid rgba(18,179,168,0.2); color:#0D6E66; }
   .alert-dot{ width:6px; height:6px; border-radius:50%; background: var(--amber); margin-top:5px; flex-shrink:0; }
   .alert-item.ok .alert-dot{ background: var(--teal); }
@@ -130,56 +99,46 @@
   .config-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:14px; margin-top:12px; }
   @media (max-width: 760px){ .config-grid{ grid-template-columns: 1fr 1fr; } }
   .field label{ display:block; font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.06em; text-transform:uppercase; color: var(--ink-dim); margin-bottom:6px; }
-  .field input{
-    width:100%; background: var(--bg); border:1px solid var(--border);
-    color: var(--ink); font-family:'IBM Plex Mono', monospace; font-size:14px; padding:9px 11px; border-radius:8px;
-  }
+  .field input{ width:100%; background: var(--bg); border:1px solid var(--border); color: var(--ink); font-family:'IBM Plex Mono', monospace; font-size:14px; padding:9px 11px; border-radius:8px; }
   .field input:focus{ outline: 2px solid var(--blue); outline-offset:1px; }
-  .save-btn{
-    margin-top:16px; background: var(--blue); color: #fff; border:none; font-family:'Manrope', sans-serif;
-    font-weight:700; font-size:13px; padding:10px 20px; border-radius:9px; cursor:pointer;
-  }
+  .save-btn{ margin-top:16px; background: var(--blue); color: #fff; border:none; font-family:'Manrope', sans-serif; font-weight:700; font-size:13px; padding:10px 20px; border-radius:9px; cursor:pointer; }
   .save-btn:hover{ background: var(--blue-deep); }
   .save-note{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--ink-dim); margin-top:8px; }
 
+  .banner{ background: #FDEAE6; border:1px solid rgba(224,80,58,0.3); color: #8A2E1E; padding:12px 16px; border-radius:12px; font-size:13px; margin-bottom:18px; display:none; }
+
   .history-table{ width:100%; border-collapse: collapse; margin-top:10px; font-size:13px; }
-  .history-table th{
-    text-align:left; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em;
-    text-transform:uppercase; color: var(--ink-dim); padding: 6px 10px; border-bottom:1px solid var(--border);
-  }
+  .history-table th{ text-align:left; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color: var(--ink-dim); padding: 6px 10px; border-bottom:1px solid var(--border); }
   .history-table td{ padding: 8px 10px; border-bottom:1px solid var(--border); font-family:'IBM Plex Mono', monospace; }
   .history-scroll{ max-height: 320px; overflow-y: auto; }
   .badge{ display:inline-block; padding:2px 10px; border-radius:20px; font-size:11.5px; font-weight:600; }
   .badge.on{ background: var(--blue-tint); color: var(--blue); }
   .badge.off{ background: #F1F3F8; color: var(--ink-dim); }
-
-  .banner{
-    background: #FDEAE6; border:1px solid rgba(224,80,58,0.3); color: #8A2E1E;
-    padding:12px 16px; border-radius:12px; font-size:13px; margin-bottom:18px; display:none;
-  }
 </style>
 </head>
 <body>
-<div class="wrap">
-
-  <header>
+<div class="navbar">
+  <div class="navbar-inner">
     <div class="brand">
-      <div class="brand-icon">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>
-      </div>
+      <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>
       <div>
-        <h1>Monitoring Pompa PDAM</h1>
-        <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
+        <h1>Monitoring Pompa PDAM Unit Kuwak</h1>
+        <div class="subtitle">Sistem Produksi Air PDAM &middot; Akses Jarak Jauh</div>
       </div>
     </div>
     <div class="live-pill"><span class="dot" id="liveDot"></span><span id="liveLabel">Menghubungkan...</span></div>
-  </header>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="tabs" id="tabBar"></div>
 
   <div class="banner" id="errorBanner"></div>
 
   <div class="hero">
     <div class="valve-badge" id="valveBadge">
-      <svg viewBox="0 0 24 24" fill="none"><path id="pumpIcon" d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 4v5l3.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 3a9 9 0 100 18 9 9 0 000-18zm0 4v5l3.5 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
     <div class="hero-status">
       <div class="status-label">Status pompa saat ini</div>
@@ -190,19 +149,19 @@
 
   <div class="grid">
     <div class="card">
-      <h3>Waktu Kejadian Terakhir</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Waktu Kejadian Terakhir</h3>
       <div class="row"><span>Terakhir ON</span><span class="val blue" id="lastOn">-</span></div>
       <div class="row"><span>Terakhir OFF</span><span class="val off" id="lastOff">-</span></div>
     </div>
     <div class="card">
-      <h3>Total Durasi Kumulatif</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Total Durasi Kumulatif</h3>
       <div class="row"><span>Total ON</span><span class="val blue" id="totalOn">-</span></div>
       <div class="row"><span>Total OFF</span><span class="val off" id="totalOff">-</span></div>
       <div class="subtitle" id="resetInfo" style="margin-top:8px;">-</div>
       <button class="save-btn" id="resetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Total</button>
     </div>
     <div class="card">
-      <h3>Rasio Operasi 24 Jam</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Rasio Operasi 24 Jam</h3>
       <div class="row"><span>ON vs periode</span><span class="val blue" id="ratioValue">-</span></div>
       <div class="bar-track"><div class="bar-fill" id="ratioBar" style="width:0%"></div></div>
       <div class="subtitle" id="ratioNote">-</div>
@@ -213,14 +172,18 @@
 
   <div class="grid two">
     <div class="card">
-      <h3>Virtual Metering</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>Virtual Metering</h3>
       <div class="status-label">Estimasi energi kumulatif</div>
       <div class="metering-value" id="kwhValue">- kWh</div>
       <div class="status-label" style="margin-top:10px;">Estimasi biaya</div>
       <div class="metering-value" id="rupiahValue">Rp -</div>
+      <div style="border-top:1px solid var(--border); margin:14px 0 10px;"></div>
+      <div class="status-label">Estimasi 24 jam terakhir</div>
+      <div class="row" style="margin-top:6px;"><span>Energi</span><span class="val blue" id="kwh24hValue">- kWh</span></div>
+      <div class="row"><span>Biaya</span><span class="val blue" id="rupiah24hValue">Rp -</span></div>
     </div>
     <div class="card">
-      <h3>Smart Alert &amp; Fault Detection</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>Smart Alert &amp; Fault Detection</h3>
       <div id="alertList"><div class="alert-item ok">Memuat data alert...</div></div>
     </div>
   </div>
@@ -238,6 +201,18 @@
     <button class="save-btn" id="saveConfigBtn">Simpan konfigurasi</button>
     <div class="save-note" id="configNote"></div>
   </div>
+
+  <div class="config" style="margin-top:14px;">
+    <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0;">Riwayat Harian Bulan Ini</h3>
+    <div class="subtitle" id="monthlyTotal" style="margin-top:4px; font-weight:600; color:var(--blue);">-</div>
+    <div class="history-scroll">
+      <table class="history-table">
+        <thead><tr><th>Tanggal</th><th>Durasi ON</th><th>Energi</th><th>Estimasi Biaya</th></tr></thead>
+        <tbody id="monthlyBody"><tr><td colspan="4">Memuat...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
   <div class="config" style="margin-top:14px;">
     <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0;">Riwayat Data Mentah</h3>
     <div class="subtitle" style="margin-top:4px;">50 kejadian terbaru (data lengkap tetap tersimpan di Supabase)</div>
@@ -251,67 +226,83 @@
 
 </div>
 
+<footer class="app-footer">
+  <span>PDAM &middot; Sistem Monitoring Pompa Jarak Jauh</span>
+</footer>
+
 <script>
 // =====================================================
 // KONFIGURASI SUPABASE - ganti dengan milik kamu sendiri
 // =====================================================
 const SUPABASE_URL = "https://tnixluzpewwamhqmapyd.supabase.co";
 const SUPABASE_KEY = "sb_publishable_0n73qqXBYCSuuIv3rdkG8A_YbvFVTRX";
-
 const REST = `${SUPABASE_URL}/rest/v1`;
-const HEADERS = {
-  "apikey": SUPABASE_KEY,
-  "Authorization": `Bearer ${SUPABASE_KEY}`,
-  "Content-Type": "application/json"
-};
+const HEADERS = { "apikey": SUPABASE_KEY, "Authorization": `Bearer ${SUPABASE_KEY}`, "Content-Type": "application/json" };
+const OFFLINE_THRESHOLD_MS = 60000;
 
-let state = {
-  currentStatus: null,       // true = ON, false = OFF
-  currentStart: null,        // Date - kapan status saat ini mulai
-  totalOnMsBase: 0,          // total ON dari segmen yang sudah SELESAI
-  totalOffMsBase: 0,         // total OFF dari segmen yang sudah SELESAI
-  ratio24h: 0,
-  lastOn: null,
-  lastOff: null,
-  config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480 },
-  alerts: [],
-  lastSeen: null,
-  deviceOnline: null,
-  resetAt: null, // titik waktu terakhir "reset" total ON/OFF (histori mentah tetap utuh)
-  ratioResetAt: null // titik waktu reset khusus untuk rasio operasi
-};
-const OFFLINE_THRESHOLD_MS = 60000; // dianggap offline jika heartbeat terakhir >60 detik lalu
-
-// Membagi rentang waktu [startMs, endMs] ke porsi WBP (17.00-22.00) dan LWBP (sisanya)
-// berdasarkan jam lokal perangkat (asumsi perangkat/browser ber-zona waktu WIB)
-function splitByTariffPeriod(startMs, endMs){
-  let wbpMs = 0;
-  let cursor = startMs;
-  let pengaman = 0;
-  while(cursor < endMs && pengaman < 1000){
-    pengaman++;
-    const cursorDate = new Date(cursor);
-    const dayStart = new Date(cursorDate.getFullYear(), cursorDate.getMonth(), cursorDate.getDate()).getTime();
-    const wbpStartToday = dayStart + 17*3600000;
-    const wbpEndToday = dayStart + 22*3600000;
-    const nextDay = dayStart + 24*3600000;
-    const segEnd = Math.min(endMs, nextDay);
-
-    const overlapStart = Math.max(cursor, wbpStartToday);
-    const overlapEnd = Math.min(segEnd, wbpEndToday);
-    if(overlapEnd > overlapStart) wbpMs += (overlapEnd - overlapStart);
-
-    cursor = segEnd;
+// =====================================================
+// PROFIL 3 POMPA - pompa_1 pakai tabel lama, pompa_2/3 pakai tabel multi_pump_*
+// =====================================================
+const PUMPS = {
+  pompa_1: {
+    label: 'Pompa 1',
+    events: 'pump_events', eventsFilter: '',
+    config: 'pump_config', configFilter: 'id=eq.1', configPk: { id: 1 },
+    device: 'device_status', deviceFilter: 'id=eq.1',
+    reset: 'reset_point', resetFilter: 'id=eq.1', resetPk: { id: 1 },
+    ratioReset: 'ratio_reset_point', ratioResetFilter: 'id=eq.1', ratioResetPk: { id: 1 }
+  },
+  pompa_2: {
+    label: 'Pompa 2',
+    events: 'multi_pump_events', eventsFilter: '&pump_id=eq.pompa_2',
+    config: 'multi_pump_config', configFilter: 'pump_id=eq.pompa_2', configPk: { pump_id: 'pompa_2' },
+    device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_2',
+    reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_2', resetPk: { pump_id: 'pompa_2' },
+    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_2', ratioResetPk: { pump_id: 'pompa_2' }
+  },
+  pompa_3: {
+    label: 'Pompa 3',
+    events: 'multi_pump_events', eventsFilter: '&pump_id=eq.pompa_3',
+    config: 'multi_pump_config', configFilter: 'pump_id=eq.pompa_3', configPk: { pump_id: 'pompa_3' },
+    device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_3',
+    reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_3', resetPk: { pump_id: 'pompa_3' },
+    ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_3', ratioResetPk: { pump_id: 'pompa_3' }
   }
-  const totalMs = Math.max(0, endMs - startMs);
-  return { wbpMs, lwbpMs: totalMs - wbpMs };
+};
+
+let activePump = 'pompa_1';
+function freshState(){
+  return {
+    currentStatus: null, currentStart: null,
+    totalOnMsBase: 0, totalOffMsBase: 0,
+    wbpOnMsBase: 0, lwbpOnMsBase: 0,
+    ratio24h: 0, lastOn: null, lastOff: null,
+    config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480 },
+    alerts: [], lastSeen: null, deviceOnline: null,
+    resetAt: null, ratioResetAt: null
+  };
+}
+let state = freshState();
+
+// Membangun bar tab di atas dashboard
+function renderTabs(){
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = Object.keys(PUMPS).map(id =>
+    `<button class="tab-btn ${id === activePump ? 'active' : ''}" data-pump="${id}">${PUMPS[id].label}</button>`
+  ).join('');
+  bar.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activePump = btn.dataset.pump;
+      state = freshState();
+      renderTabs();
+      fetchAndRender();
+    });
+  });
 }
 
 function fmtDuration(ms){
   const totalSec = Math.max(0, Math.floor(ms/1000));
-  const h = Math.floor(totalSec/3600);
-  const m = Math.floor((totalSec%3600)/60);
-  const s = totalSec%60;
+  const h = Math.floor(totalSec/3600); const m = Math.floor((totalSec%3600)/60); const s = totalSec%60;
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 function fmtDateTime(d){
@@ -320,41 +311,55 @@ function fmtDateTime(d){
 }
 function showError(msg){
   const el = document.getElementById('errorBanner');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
 }
 
-async function fetchConfig(){
-  const res = await fetch(`${REST}/pump_config?id=eq.1&select=*`, { headers: HEADERS });
-  if(!res.ok) throw new Error("Gagal mengambil pump_config (cek publishable key & RLS policy)");
+function splitByTariffPeriod(startMs, endMs){
+  let wbpMs = 0; let cursor = startMs; let pengaman = 0;
+  while(cursor < endMs && pengaman < 1000){
+    pengaman++;
+    const cursorDate = new Date(cursor);
+    const dayStart = new Date(cursorDate.getFullYear(), cursorDate.getMonth(), cursorDate.getDate()).getTime();
+    const wbpStartToday = dayStart + 17*3600000;
+    const wbpEndToday = dayStart + 22*3600000;
+    const nextDay = dayStart + 24*3600000;
+    const segEnd = Math.min(endMs, nextDay);
+    const overlapStart = Math.max(cursor, wbpStartToday);
+    const overlapEnd = Math.min(segEnd, wbpEndToday);
+    if(overlapEnd > overlapStart) wbpMs += (overlapEnd - overlapStart);
+    cursor = segEnd;
+  }
+  const totalMs = Math.max(0, endMs - startMs);
+  return { wbpMs, lwbpMs: totalMs - wbpMs };
+}
+
+async function fetchConfig(profile){
+  const res = await fetch(`${REST}/${profile.config}?select=*&${profile.configFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.config} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.config = rows[0];
 }
-
-async function fetchDeviceStatus(){
-  const res = await fetch(`${REST}/device_status?id=eq.1&select=*`, { headers: HEADERS });
-  if(!res.ok) throw new Error("Gagal mengambil device_status (cek tabel & RLS policy)");
+async function fetchDeviceStatus(profile){
+  const res = await fetch(`${REST}/${profile.device}?select=*&${profile.deviceFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.device} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.lastSeen = new Date(rows[0].last_seen);
 }
-
-async function fetchResetPoint(){
-  const res = await fetch(`${REST}/reset_point?id=eq.1&select=*`, { headers: HEADERS });
-  if(!res.ok) throw new Error("Gagal mengambil reset_point (cek tabel & RLS policy)");
+async function fetchResetPoint(profile){
+  const res = await fetch(`${REST}/${profile.reset}?select=*&${profile.resetFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.reset} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.resetAt = new Date(rows[0].reset_at);
 }
-
-async function fetchRatioResetPoint(){
-  const res = await fetch(`${REST}/ratio_reset_point?id=eq.1&select=*`, { headers: HEADERS });
-  if(!res.ok) throw new Error("Gagal mengambil ratio_reset_point (cek tabel & RLS policy)");
+async function fetchRatioResetPoint(profile){
+  const res = await fetch(`${REST}/${profile.ratioReset}?select=*&${profile.ratioResetFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.ratioReset} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.ratioResetAt = new Date(rows[0].reset_at);
 }
-
-async function fetchEvents(){
-  const res = await fetch(`${REST}/pump_events?select=*&order=event_time.asc&limit=5000`, { headers: HEADERS });
-  if(!res.ok) throw new Error("Gagal mengambil pump_events (cek publishable key & RLS policy)");
+async function fetchEvents(profile){
+  const res = await fetch(`${REST}/${profile.events}?select=*&order=event_time.asc&limit=5000${profile.eventsFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.events} (cek tabel & RLS policy)`);
   return await res.json();
 }
 
@@ -364,16 +369,13 @@ function computeMetrics(events){
   const cutoff24h = new Date(now.getTime() - 24*3600*1000);
   const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
   const ratioResetAtMs = state.ratioResetAt ? state.ratioResetAt.getTime() : 0;
-  // Cutoff efektif: 24 jam terakhir, TAPI kalau titik reset rasio lebih baru dari itu, pakai titik reset
   const effectiveCutoffMs = Math.max(cutoff24h.getTime(), ratioResetAtMs);
-  state.ratioPeriodMs = now.getTime() - effectiveCutoffMs; // panjang periode yang sedang dipakai (untuk label)
+
   let totalOnMsBase = 0, totalOffMsBase = 0, last24hOnMs = 0;
   let wbpOnMsBase = 0, lwbpOnMsBase = 0;
+  let last24hWbpMs = 0, last24hLwbpMs = 0, last24hOnMsStrict = 0;
   let lastOn = null, lastOff = null;
 
-  // Segmen yang SUDAH SELESAI saja (bukan segmen terakhir yang masih berjalan)
-  // Setiap segmen di-clamp ke titik reset - jadi histori mentah tetap utuh,
-  // tapi total yang ditampilkan cuma menghitung sejak reset terakhir
   for(let i=0;i<events.length-1;i++){
     const start = new Date(events[i].event_time);
     const end = new Date(events[i+1].event_time);
@@ -384,8 +386,7 @@ function computeMetrics(events){
     if(isOn){
       totalOnMsBase += durMs;
       const split = splitByTariffPeriod(clampedStartMs, end.getTime());
-      wbpOnMsBase += split.wbpMs;
-      lwbpOnMsBase += split.lwbpMs;
+      wbpOnMsBase += split.wbpMs; lwbpOnMsBase += split.lwbpMs;
     } else {
       totalOffMsBase += durMs;
     }
@@ -395,6 +396,15 @@ function computeMetrics(events){
     const segStart = Math.max(start.getTime(), effectiveCutoffMs);
     const segEnd = end.getTime();
     if(segEnd > segStart && isOn) last24hOnMs += (segEnd - segStart);
+
+    // Jendela 24 jam MURNI (selalu 24 jam ke belakang, tidak terpengaruh reset rasio)
+    // - dipakai khusus untuk estimasi biaya listrik per 24 jam
+    const seg24Start = Math.max(start.getTime(), cutoff24h.getTime());
+    if(segEnd > seg24Start && isOn){
+      last24hOnMsStrict += (segEnd - seg24Start);
+      const split24 = splitByTariffPeriod(seg24Start, segEnd);
+      last24hWbpMs += split24.wbpMs; last24hLwbpMs += split24.lwbpMs;
+    }
   }
 
   const lastEvent = events[events.length - 1];
@@ -409,19 +419,26 @@ function computeMetrics(events){
   state.lastOn = lastOn;
   state.lastOff = lastOff;
 
-  // Segmen terakhir (masih berjalan) tetap dihitung untuk rasio operasi
   const openStart = Math.max(state.currentStart.getTime(), effectiveCutoffMs);
   if(now.getTime() > openStart && state.currentStatus) last24hOnMs += (now.getTime() - openStart);
-  // Pembagi TETAP 24 jam (bukan ikut menyusut ke periode sejak reset) -
-  // jadi rasio benar-benar mencerminkan "porsi dari 24 jam terakhir", bukan lompat ke 100%
   state.ratio24h = (last24hOnMs / (24*3600*1000)) * 100;
 
-  // Smart alert: short cycling (jumlah ON dalam 1 jam terakhir)
+  // Kontribusi segmen yang masih berjalan ke jendela 24 jam murni
+  const open24Start = Math.max(state.currentStart.getTime(), cutoff24h.getTime());
+  if(now.getTime() > open24Start && state.currentStatus){
+    last24hOnMsStrict += (now.getTime() - open24Start);
+    const splitOpen24 = splitByTariffPeriod(open24Start, now.getTime());
+    last24hWbpMs += splitOpen24.wbpMs; last24hLwbpMs += splitOpen24.lwbpMs;
+  }
+  const dayaKw24 = state.config.daya_pompa_watt / 1000;
+  state.kwh24h = (last24hOnMsStrict/3600000) * dayaKw24;
+  state.rupiah24h = (last24hWbpMs/3600000) * dayaKw24 * state.config.tarif_wbp
+                  + (last24hLwbpMs/3600000) * dayaKw24 * state.config.tarif_lwbp;
+
   const oneHourAgo = new Date(now.getTime() - 3600*1000);
   const onCountLastHour = events.filter(e => e.event_type === 'ON' && new Date(e.event_time) >= oneHourAgo).length;
   const shortCycling = onCountLastHour > state.config.batas_short_cycling;
 
-  // Smart alert: over running (skip kalau ESP32 sedang offline - statusnya tidak bisa dipercaya)
   const currentDurationMin = (now - state.currentStart) / 60000;
   const overRunning = state.deviceOnline !== false && state.currentStatus && currentDurationMin > state.config.batas_over_running;
 
@@ -430,10 +447,84 @@ function computeMetrics(events){
   if(overRunning) state.alerts.push(`Over running: pompa menyala nonstop ${fmtDuration(now - state.currentStart)} (batas ${state.config.batas_over_running} menit)`);
 }
 
+// Mengelompokkan waktu ON per hari kalender (lokal), lalu hitung kWh & biaya per hari -
+// untuk riwayat harian yang mudah dibaca per bulan
+function computeMonthlyHistory(events){
+  if(!events || events.length === 0) return { rows: [], totalKwh: 0, totalRupiah: 0 };
+  const now = new Date();
+  const dailyMap = {};
+
+  function addToDay(startMs, endMs){
+    let cursor = startMs; let guard = 0;
+    while(cursor < endMs && guard < 1000){
+      guard++;
+      const d = new Date(cursor);
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const nextDay = dayStart + 24*3600000;
+      const segEnd = Math.min(endMs, nextDay);
+      const key = dayStart;
+      const split = splitByTariffPeriod(cursor, segEnd);
+      if(!dailyMap[key]) dailyMap[key] = { onMs: 0, wbpMs: 0, lwbpMs: 0, dayStart };
+      dailyMap[key].onMs += (segEnd - cursor);
+      dailyMap[key].wbpMs += split.wbpMs;
+      dailyMap[key].lwbpMs += split.lwbpMs;
+      cursor = segEnd;
+    }
+  }
+
+  for(let i=0;i<events.length;i++){
+    if(events[i].event_type !== 'ON') continue;
+    const start = new Date(events[i].event_time).getTime();
+    const end = (i+1 < events.length) ? new Date(events[i+1].event_time).getTime() : now.getTime();
+    addToDay(start, end);
+  }
+
+  const dayaKw = state.config.daya_pompa_watt / 1000;
+  const bulanIni = now.getMonth(), tahunIni = now.getFullYear();
+  let totalKwh = 0, totalRupiah = 0;
+
+  const rows = Object.values(dailyMap).map(d => {
+    const kWh = (d.onMs/3600000) * dayaKw;
+    const rupiah = (d.wbpMs/3600000) * dayaKw * state.config.tarif_wbp + (d.lwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
+    return { dayStart: d.dayStart, onMs: d.onMs, kWh, rupiah };
+  }).filter(r => {
+    const dd = new Date(r.dayStart);
+    return dd.getMonth() === bulanIni && dd.getFullYear() === tahunIni;
+  }).sort((a,b) => b.dayStart - a.dayStart);
+
+  rows.forEach(r => { totalKwh += r.kWh; totalRupiah += r.rupiah; });
+  return { rows, totalKwh, totalRupiah };
+}
+
+function renderMonthlyHistory(events){
+  const { rows, totalKwh, totalRupiah } = computeMonthlyHistory(events);
+  document.getElementById('monthlyTotal').textContent =
+    `Total bulan ini: ${totalKwh.toFixed(2)} kWh (~Rp ${Math.round(totalRupiah).toLocaleString('id-ID')})`;
+
+  const body = document.getElementById('monthlyBody');
+  if(rows.length === 0){ body.innerHTML = '<tr><td colspan="4">Belum ada data bulan ini.</td></tr>'; return; }
+  body.innerHTML = rows.map(r => {
+    const tgl = new Date(r.dayStart).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+    return `<tr><td>${tgl}</td><td>${fmtDuration(r.onMs)}</td><td>${r.kWh.toFixed(2)} kWh</td><td>Rp ${Math.round(r.rupiah).toLocaleString('id-ID')}</td></tr>`;
+  }).join('');
+}
+
+function renderHistoryTable(events){
+  const body = document.getElementById('historyBody');
+  if(!events || events.length === 0){ body.innerHTML = '<tr><td colspan="2">Belum ada data.</td></tr>'; return; }
+  const terbaru = events.slice(-50).reverse();
+  body.innerHTML = terbaru.map(e => {
+    const isOn = e.event_type === 'ON';
+    return `<tr><td><span class="badge ${isOn ? 'on':'off'}">${isOn ? 'NYALA':'MATI'}</span></td><td>${fmtDateTime(new Date(e.event_time))}</td></tr>`;
+  }).join('');
+}
+
 function renderStatic(){
   document.getElementById('lastOn').textContent = fmtDateTime(state.lastOn);
   document.getElementById('lastOff').textContent = fmtDateTime(state.lastOff);
   document.getElementById('resetInfo').textContent = state.resetAt ? `Dihitung sejak: ${fmtDateTime(state.resetAt)}` : 'Belum pernah direset';
+  document.getElementById('kwh24hValue').textContent = (state.kwh24h || 0).toFixed(2) + ' kWh';
+  document.getElementById('rupiah24hValue').textContent = 'Rp ' + Math.round(state.rupiah24h || 0).toLocaleString('id-ID');
 
   const ratio = Math.min(100, Math.max(0, state.ratio24h));
   document.getElementById('ratioValue').textContent = ratio.toFixed(1) + '% (vs 24 jam)';
@@ -458,46 +549,31 @@ function renderStatic(){
 function renderLive(){
   if(state.currentStart === null) return;
   const now = new Date();
-
   const statusEl = document.getElementById('statusValue');
   const subEl = document.getElementById('durationLive');
   const dot = document.getElementById('liveDot');
   const label = document.getElementById('liveLabel');
   const badge = document.getElementById('valveBadge');
 
-  // Kalau ESP32 offline, hentikan hitungan di titik heartbeat terakhir yang diketahui -
-  // supaya dashboard tidak seolah-olah masih "hidup" menghitung status yang sudah basi
   const referenceNow = (state.deviceOnline === false && state.lastSeen) ? state.lastSeen : now;
   const durMs = referenceNow - state.currentStart;
 
   if(state.deviceOnline === false){
     statusEl.textContent = 'TIDAK DIKETAHUI';
     statusEl.className = 'status-value off';
-    badge.classList.remove('on');
-    dot.classList.remove('on');
-    dot.classList.add('offline');
+    badge.classList.remove('on'); dot.classList.remove('on'); dot.classList.add('offline');
     label.textContent = 'ESP32 Offline';
     subEl.textContent = `data terakhir: ${fmtDateTime(state.lastSeen)}`;
   } else if(state.currentStatus){
-    statusEl.textContent = 'NYALA';
-    statusEl.className = 'status-value on';
-    badge.classList.add('on');
-    dot.classList.add('on');
-    dot.classList.remove('offline');
-    label.textContent = 'Live';
-    subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
+    statusEl.textContent = 'NYALA'; statusEl.className = 'status-value on';
+    badge.classList.add('on'); dot.classList.add('on'); dot.classList.remove('offline');
+    label.textContent = 'Live'; subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
   } else {
-    statusEl.textContent = 'MATI';
-    statusEl.className = 'status-value off';
-    badge.classList.remove('on');
-    dot.classList.remove('on');
-    dot.classList.remove('offline');
-    label.textContent = 'Live';
-    subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
+    statusEl.textContent = 'MATI'; statusEl.className = 'status-value off';
+    badge.classList.remove('on'); dot.classList.remove('on'); dot.classList.remove('offline');
+    label.textContent = 'Live'; subEl.textContent = `berjalan ${fmtDuration(durMs)}`;
   }
 
-  // Total durasi kumulatif ikut bertambah tiap detik - tapi berhenti bertambah
-  // kalau ESP32 offline (durMs sudah dibekukan di atas), dan di-clamp ke titik reset
   const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
   const contribMs = Math.max(0, referenceNow.getTime() - Math.max(state.currentStart.getTime(), resetAtMs));
   const liveTotalOn = state.totalOnMsBase + (state.currentStatus ? contribMs : 0);
@@ -505,47 +581,33 @@ function renderLive(){
   document.getElementById('totalOn').textContent = fmtDuration(liveTotalOn);
   document.getElementById('totalOff').textContent = fmtDuration(liveTotalOff);
 
-  // Virtual metering: pisahkan kontribusi live segmen terbuka ke WBP/LWBP dulu
   let liveWbpMs = state.wbpOnMsBase || 0;
   let liveLwbpMs = state.lwbpOnMsBase || 0;
   if(state.currentStatus){
     const openStartMs = Math.max(state.currentStart.getTime(), resetAtMs);
     const split = splitByTariffPeriod(openStartMs, referenceNow.getTime());
-    liveWbpMs += split.wbpMs;
-    liveLwbpMs += split.lwbpMs;
+    liveWbpMs += split.wbpMs; liveLwbpMs += split.lwbpMs;
   }
   const dayaKw = state.config.daya_pompa_watt / 1000;
   const kWh = (liveTotalOn/3600000) * dayaKw;
-  const rupiah = (liveWbpMs/3600000) * dayaKw * state.config.tarif_wbp
-               + (liveLwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
+  const rupiah = (liveWbpMs/3600000) * dayaKw * state.config.tarif_wbp + (liveLwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
   document.getElementById('kwhValue').textContent = kWh.toFixed(2) + ' kWh';
   document.getElementById('rupiahValue').textContent = 'Rp ' + Math.round(rupiah).toLocaleString('id-ID');
 }
 
-function renderHistoryTable(events){
-  const body = document.getElementById('historyBody');
-  if(!events || events.length === 0){
-    body.innerHTML = '<tr><td colspan="2">Belum ada data.</td></tr>';
-    return;
-  }
-  const terbaru = events.slice(-50).reverse(); // 50 terbaru, urutan descending
-  body.innerHTML = terbaru.map(e => {
-    const isOn = e.event_type === 'ON';
-    return `<tr><td><span class="badge ${isOn ? 'on':'off'}">${isOn ? 'NYALA':'MATI'}</span></td><td>${fmtDateTime(new Date(e.event_time))}</td></tr>`;
-  }).join('');
-}
-
 async function fetchAndRender(){
+  const profile = PUMPS[activePump];
   try{
-    await fetchConfig();
-    await fetchDeviceStatus();
-    await fetchResetPoint();
-    await fetchRatioResetPoint();
+    await fetchConfig(profile);
+    await fetchDeviceStatus(profile);
     state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
+    await fetchResetPoint(profile);
+    await fetchRatioResetPoint(profile);
 
-    const events = await fetchEvents();
+    const events = await fetchEvents(profile);
     computeMetrics(events);
     renderHistoryTable(events);
+    renderMonthlyHistory(events);
 
     if(!state.deviceOnline){
       state.alerts.unshift(`ESP32 tidak terhubung sejak ${fmtDateTime(state.lastSeen)} — status pompa dianggap tidak diketahui`);
@@ -555,12 +617,13 @@ async function fetchAndRender(){
     renderLive();
     document.getElementById('errorBanner').style.display = 'none';
   } catch(err){
-    showError(err.message + ' — pastikan SUPABASE_URL dan SUPABASE_KEY di kode sudah benar.');
+    showError(err.message + ' — pastikan SUPABASE_KEY dan tabel sudah benar.');
     document.getElementById('liveLabel').textContent = 'Terputus';
   }
 }
 
 document.getElementById('saveConfigBtn').addEventListener('click', async () => {
+  const profile = PUMPS[activePump];
   const note = document.getElementById('configNote');
   const body = {
     daya_pompa_watt: parseFloat(document.getElementById('cfgDaya').value),
@@ -570,55 +633,46 @@ document.getElementById('saveConfigBtn').addEventListener('click', async () => {
     batas_over_running: parseInt(document.getElementById('cfgOver').value)
   };
   try{
-    const res = await fetch(`${REST}/pump_config?id=eq.1`, {
-      method: 'PATCH',
-      headers: { ...HEADERS, "Prefer": "return=minimal" },
-      body: JSON.stringify(body)
+    const res = await fetch(`${REST}/${profile.config}?${profile.configFilter}`, {
+      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(body)
     });
     if(!res.ok) throw new Error('Gagal menyimpan');
     note.textContent = 'Tersimpan.';
     state.config = { ...state.config, ...body };
     setTimeout(() => note.textContent = '', 2500);
-  } catch(err){
-    note.textContent = 'Gagal menyimpan konfigurasi.';
-  }
+  } catch(err){ note.textContent = 'Gagal menyimpan konfigurasi.'; }
 });
 
 document.getElementById('resetBtn').addEventListener('click', async () => {
-  const yakin = confirm('Reset total ON/OFF sekarang? Histori data mentah tetap tersimpan, tapi angka Total ON/OFF akan mulai dihitung ulang dari titik ini.');
+  const profile = PUMPS[activePump];
+  const yakin = confirm(`Reset total ON/OFF ${profile.label} sekarang? Histori data mentah tetap tersimpan.`);
   if(!yakin) return;
   try{
-    const res = await fetch(`${REST}/reset_point?id=eq.1`, {
-      method: 'PATCH',
-      headers: { ...HEADERS, "Prefer": "return=minimal" },
-      body: JSON.stringify({ id: 1 })
+    const res = await fetch(`${REST}/${profile.reset}?${profile.resetFilter}`, {
+      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(profile.resetPk)
     });
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
-  } catch(err){
-    alert('Gagal mereset total. Coba lagi.');
-  }
+  } catch(err){ alert('Gagal mereset total. Coba lagi.'); }
 });
 
 document.getElementById('ratioResetBtn').addEventListener('click', async () => {
-  const yakin = confirm('Reset rasio operasi sekarang? Rasio akan mulai dihitung ulang dari titik ini (hingga maksimal 24 jam ke depan, lalu kembali jadi rasio rolling 24 jam seperti biasa).');
+  const profile = PUMPS[activePump];
+  const yakin = confirm(`Reset rasio operasi ${profile.label} sekarang?`);
   if(!yakin) return;
   try{
-    const res = await fetch(`${REST}/ratio_reset_point?id=eq.1`, {
-      method: 'PATCH',
-      headers: { ...HEADERS, "Prefer": "return=minimal" },
-      body: JSON.stringify({ id: 1 })
+    const res = await fetch(`${REST}/${profile.ratioReset}?${profile.ratioResetFilter}`, {
+      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(profile.ratioResetPk)
     });
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
-  } catch(err){
-    alert('Gagal mereset rasio. Coba lagi.');
-  }
+  } catch(err){ alert('Gagal mereset rasio. Coba lagi.'); }
 });
 
+renderTabs();
 fetchAndRender();
-setInterval(fetchAndRender, 10000); // ambil data baru tiap 10 detik
-setInterval(renderLive, 1000);      // status, timer, & total kumulatif update tiap detik
+setInterval(fetchAndRender, 10000);
+setInterval(renderLive, 1000);
 </script>
 </body>
 </html>
