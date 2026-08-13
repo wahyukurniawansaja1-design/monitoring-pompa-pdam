@@ -122,7 +122,7 @@
     <div class="brand">
       <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>
       <div>
-        <h1>Monitoring Pompa PDAM Unit Kuwak</h1>
+        <h1>Monitoring Pompa PDAM  Unit Kuwak</h1>
         <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
       </div>
     </div>
@@ -147,7 +147,7 @@
     </div>
   </div>
 
-  <div class="grid">
+  <div class="grid two">
     <div class="card">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>Waktu Kejadian Terakhir</h3>
       <div class="row"><span>Terakhir ON</span><span class="val blue" id="lastOn">-</span></div>
@@ -159,14 +159,6 @@
       <div class="row"><span>Total OFF</span><span class="val off" id="totalOff">-</span></div>
       <div class="subtitle" id="resetInfo" style="margin-top:8px;">-</div>
       <button class="save-btn" id="resetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Total</button>
-    </div>
-    <div class="card">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>Rasio Operasi 24 Jam</h3>
-      <div class="row"><span>ON vs periode</span><span class="val blue" id="ratioValue">-</span></div>
-      <div class="bar-track"><div class="bar-fill" id="ratioBar" style="width:0%"></div></div>
-      <div class="subtitle" id="ratioNote">-</div>
-      <div class="subtitle" id="ratioResetInfo" style="margin-top:8px;">-</div>
-      <button class="save-btn" id="ratioResetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Rasio</button>
     </div>
   </div>
 
@@ -181,6 +173,8 @@
       <div class="status-label">Estimasi 24 jam terakhir</div>
       <div class="row" style="margin-top:6px;"><span>Energi</span><span class="val blue" id="kwh24hValue">- kWh</span></div>
       <div class="row"><span>Biaya</span><span class="val blue" id="rupiah24hValue">Rp -</span></div>
+      <div class="subtitle" id="meteringResetInfo" style="margin-top:10px;">-</div>
+      <button class="save-btn" id="meteringResetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Virtual Metering</button>
     </div>
     <div class="card">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v4M12 17h.01"/></svg>Smart Alert &amp; Fault Detection</h3>
@@ -200,6 +194,15 @@
     </div>
     <button class="save-btn" id="saveConfigBtn">Simpan konfigurasi</button>
     <div class="save-note" id="configNote"></div>
+  </div>
+
+  <div class="config" style="margin-top:14px;">
+    <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0; display:flex; align-items:center; gap:7px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;opacity:0.65;"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+      Tren Biaya Harian Bulan Ini
+    </h3>
+    <div class="subtitle" style="margin-top:4px;">Estimasi biaya listrik per hari, arahkan kursor ke batang untuk detail</div>
+    <div id="trendChart" style="margin-top:14px;"></div>
   </div>
 
   <div class="config" style="margin-top:14px;">
@@ -253,7 +256,8 @@ const PUMPS = {
     device: 'device_status', deviceFilter: 'id=eq.1',
     reset: 'reset_point', resetFilter: 'id=eq.1', resetPk: { id: 1 },
     ratioReset: 'ratio_reset_point', ratioResetFilter: 'id=eq.1', ratioResetPk: { id: 1 },
-    monthlyReset: 'monthly_reset_point', monthlyResetFilter: 'id=eq.1', monthlyResetPk: { id: 1 }
+    monthlyReset: 'monthly_reset_point', monthlyResetFilter: 'id=eq.1', monthlyResetPk: { id: 1 },
+    meteringReset: 'metering_reset_point', meteringResetFilter: 'id=eq.1', meteringResetPk: { id: 1 }
   },
   pompa_2: {
     label: 'Pompa 2',
@@ -262,7 +266,8 @@ const PUMPS = {
     device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_2',
     reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_2', resetPk: { pump_id: 'pompa_2' },
     ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_2', ratioResetPk: { pump_id: 'pompa_2' },
-    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_2', monthlyResetPk: { pump_id: 'pompa_2' }
+    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_2', monthlyResetPk: { pump_id: 'pompa_2' },
+    meteringReset: 'multi_pump_metering_reset_point', meteringResetFilter: 'pump_id=eq.pompa_2', meteringResetPk: { pump_id: 'pompa_2' }
   },
   pompa_3: {
     label: 'Pompa 3',
@@ -271,7 +276,8 @@ const PUMPS = {
     device: 'multi_pump_device_status', deviceFilter: 'pump_id=eq.pompa_3',
     reset: 'multi_pump_reset_point', resetFilter: 'pump_id=eq.pompa_3', resetPk: { pump_id: 'pompa_3' },
     ratioReset: 'multi_pump_ratio_reset_point', ratioResetFilter: 'pump_id=eq.pompa_3', ratioResetPk: { pump_id: 'pompa_3' },
-    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_3', monthlyResetPk: { pump_id: 'pompa_3' }
+    monthlyReset: 'multi_pump_monthly_reset_point', monthlyResetFilter: 'pump_id=eq.pompa_3', monthlyResetPk: { pump_id: 'pompa_3' },
+    meteringReset: 'multi_pump_metering_reset_point', meteringResetFilter: 'pump_id=eq.pompa_3', meteringResetPk: { pump_id: 'pompa_3' }
   }
 };
 
@@ -281,10 +287,10 @@ function freshState(){
     currentStatus: null, currentStart: null,
     totalOnMsBase: 0, totalOffMsBase: 0,
     wbpOnMsBase: 0, lwbpOnMsBase: 0,
-    ratio24h: 0, lastOn: null, lastOff: null,
+    lastOn: null, lastOff: null,
     config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480 },
     alerts: [], lastSeen: null, deviceOnline: null,
-    resetAt: null, ratioResetAt: null, monthlyResetAt: null
+    resetAt: null, monthlyResetAt: null, meteringResetAt: null
   };
 }
 let state = freshState();
@@ -356,17 +362,17 @@ async function fetchResetPoint(profile){
   const rows = await res.json();
   if(rows.length > 0) state.resetAt = new Date(rows[0].reset_at);
 }
-async function fetchRatioResetPoint(profile){
-  const res = await fetch(`${REST}/${profile.ratioReset}?select=*&${profile.ratioResetFilter}`, { headers: HEADERS });
-  if(!res.ok) throw new Error(`Gagal mengambil ${profile.ratioReset} (cek tabel & RLS policy)`);
-  const rows = await res.json();
-  if(rows.length > 0) state.ratioResetAt = new Date(rows[0].reset_at);
-}
 async function fetchMonthlyResetPoint(profile){
   const res = await fetch(`${REST}/${profile.monthlyReset}?select=*&${profile.monthlyResetFilter}`, { headers: HEADERS });
   if(!res.ok) throw new Error(`Gagal mengambil ${profile.monthlyReset} (cek tabel & RLS policy)`);
   const rows = await res.json();
   if(rows.length > 0) state.monthlyResetAt = new Date(rows[0].reset_at);
+}
+async function fetchMeteringResetPoint(profile){
+  const res = await fetch(`${REST}/${profile.meteringReset}?select=*&${profile.meteringResetFilter}`, { headers: HEADERS });
+  if(!res.ok) throw new Error(`Gagal mengambil ${profile.meteringReset} (cek tabel & RLS policy)`);
+  const rows = await res.json();
+  if(rows.length > 0) state.meteringResetAt = new Date(rows[0].reset_at);
 }
 async function fetchEvents(profile){
   const res = await fetch(`${REST}/${profile.events}?select=*&order=event_time.asc&limit=5000${profile.eventsFilter}`, { headers: HEADERS });
@@ -379,10 +385,9 @@ function computeMetrics(events){
   const now = new Date();
   const cutoff24h = new Date(now.getTime() - 24*3600*1000);
   const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
-  const ratioResetAtMs = state.ratioResetAt ? state.ratioResetAt.getTime() : 0;
-  const effectiveCutoffMs = Math.max(cutoff24h.getTime(), ratioResetAtMs);
 
-  let totalOnMsBase = 0, totalOffMsBase = 0, last24hOnMs = 0;
+  const meteringResetAtMs = state.meteringResetAt ? state.meteringResetAt.getTime() : 0;
+  let totalOnMsBase = 0, totalOffMsBase = 0;
   let wbpOnMsBase = 0, lwbpOnMsBase = 0;
   let last24hWbpMs = 0, last24hLwbpMs = 0, last24hOnMsStrict = 0;
   let lastOn = null, lastOff = null;
@@ -396,20 +401,22 @@ function computeMetrics(events){
 
     if(isOn){
       totalOnMsBase += durMs;
-      const split = splitByTariffPeriod(clampedStartMs, end.getTime());
-      wbpOnMsBase += split.wbpMs; lwbpOnMsBase += split.lwbpMs;
+      // Virtual metering pakai titik reset SENDIRI (meteringResetAtMs), terpisah dari Reset Total
+      const clampedMeteringStartMs = Math.max(start.getTime(), meteringResetAtMs);
+      if(end.getTime() > clampedMeteringStartMs){
+        const split = splitByTariffPeriod(clampedMeteringStartMs, end.getTime());
+        wbpOnMsBase += split.wbpMs; lwbpOnMsBase += split.lwbpMs;
+      }
     } else {
       totalOffMsBase += durMs;
     }
     if(events[i].event_type === 'ON') lastOn = start;
     if(events[i].event_type === 'OFF') lastOff = start;
 
-    const segStart = Math.max(start.getTime(), effectiveCutoffMs);
     const segEnd = end.getTime();
-    if(segEnd > segStart && isOn) last24hOnMs += (segEnd - segStart);
 
-    // Jendela 24 jam MURNI (selalu 24 jam ke belakang, tidak terpengaruh reset rasio)
-    // - dipakai khusus untuk estimasi biaya listrik per 24 jam
+    // Jendela 24 jam MURNI (selalu 24 jam ke belakang) - dipakai khusus
+    // untuk estimasi biaya listrik per 24 jam
     const seg24Start = Math.max(start.getTime(), cutoff24h.getTime());
     if(segEnd > seg24Start && isOn){
       last24hOnMsStrict += (segEnd - seg24Start);
@@ -429,10 +436,6 @@ function computeMetrics(events){
   state.lwbpOnMsBase = lwbpOnMsBase;
   state.lastOn = lastOn;
   state.lastOff = lastOff;
-
-  const openStart = Math.max(state.currentStart.getTime(), effectiveCutoffMs);
-  if(now.getTime() > openStart && state.currentStatus) last24hOnMs += (now.getTime() - openStart);
-  state.ratio24h = (last24hOnMs / (24*3600*1000)) * 100;
 
   // Kontribusi segmen yang masih berjalan ke jendela 24 jam murni
   const open24Start = Math.max(state.currentStart.getTime(), cutoff24h.getTime());
@@ -509,11 +512,41 @@ function computeMonthlyHistory(events){
   return { rows, totalKwh, totalRupiah };
 }
 
+function renderTrendChart(rows){
+  const container = document.getElementById('trendChart');
+  if(!rows || rows.length === 0){
+    container.innerHTML = '<div class="subtitle">Belum ada data bulan ini.</div>';
+    return;
+  }
+  const asc = [...rows].sort((a,b) => a.dayStart - b.dayStart);
+  const maxVal = Math.max(...asc.map(r => r.rupiah), 1);
+  const W = 800, H = 200, padL = 8, padB = 24, padT = 12;
+  const chartW = W - padL*2;
+  const gap = 4;
+  const barW = Math.max(6, chartW/asc.length - gap);
+  const showLabelEvery = asc.length <= 12 ? 1 : Math.ceil(asc.length/10);
+
+  let bars = '';
+  asc.forEach((r, i) => {
+    const h = Math.max(2, (r.rupiah/maxVal) * (H - padB - padT));
+    const x = padL + i*(barW+gap);
+    const y = H - padB - h;
+    const tgl = new Date(r.dayStart).getDate();
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="#2E5FE8" opacity="0.85"><title>Tanggal ${tgl}: Rp ${Math.round(r.rupiah).toLocaleString('id-ID')} (${r.kWh.toFixed(2)} kWh)</title></rect>`;
+    if(i % showLabelEvery === 0){
+      bars += `<text x="${(x+barW/2).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6B7C99">${tgl}</text>`;
+    }
+  });
+
+  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible; display:block;">${bars}</svg>`;
+}
+
 function renderMonthlyHistory(events){
   const { rows, totalKwh, totalRupiah } = computeMonthlyHistory(events);
   document.getElementById('monthlyTotal').textContent =
     `Total bulan ini: ${totalKwh.toFixed(2)} kWh (~Rp ${Math.round(totalRupiah).toLocaleString('id-ID')})`;
   document.getElementById('monthlyResetInfo').textContent = state.monthlyResetAt ? `Dihitung sejak: ${fmtDateTime(state.monthlyResetAt)}` : 'Belum pernah direset';
+  renderTrendChart(rows);
 
   const body = document.getElementById('monthlyBody');
   if(rows.length === 0){ body.innerHTML = '<tr><td colspan="4">Belum ada data bulan ini.</td></tr>'; return; }
@@ -539,12 +572,6 @@ function renderStatic(){
   document.getElementById('resetInfo').textContent = state.resetAt ? `Dihitung sejak: ${fmtDateTime(state.resetAt)}` : 'Belum pernah direset';
   document.getElementById('kwh24hValue').textContent = (state.kwh24h || 0).toFixed(2) + ' kWh';
   document.getElementById('rupiah24hValue').textContent = 'Rp ' + Math.round(state.rupiah24h || 0).toLocaleString('id-ID');
-
-  const ratio = Math.min(100, Math.max(0, state.ratio24h));
-  document.getElementById('ratioValue').textContent = ratio.toFixed(1) + '% (vs 24 jam)';
-  document.getElementById('ratioBar').style.width = ratio.toFixed(1) + '%';
-  document.getElementById('ratioNote').textContent = ratio > 60 ? 'Beban kerja tinggi' : ratio > 25 ? 'Beban kerja normal' : 'Beban kerja rendah';
-  document.getElementById('ratioResetInfo').textContent = state.ratioResetAt ? `Dihitung sejak: ${fmtDateTime(state.ratioResetAt)}` : 'Belum pernah direset';
 
   const alertList = document.getElementById('alertList');
   if(state.alerts.length === 0){
@@ -598,15 +625,19 @@ function renderLive(){
   let liveWbpMs = state.wbpOnMsBase || 0;
   let liveLwbpMs = state.lwbpOnMsBase || 0;
   if(state.currentStatus){
-    const openStartMs = Math.max(state.currentStart.getTime(), resetAtMs);
-    const split = splitByTariffPeriod(openStartMs, referenceNow.getTime());
-    liveWbpMs += split.wbpMs; liveLwbpMs += split.lwbpMs;
+    const meteringResetAtMs = state.meteringResetAt ? state.meteringResetAt.getTime() : 0;
+    const openStartMs = Math.max(state.currentStart.getTime(), meteringResetAtMs);
+    if(referenceNow.getTime() > openStartMs){
+      const split = splitByTariffPeriod(openStartMs, referenceNow.getTime());
+      liveWbpMs += split.wbpMs; liveLwbpMs += split.lwbpMs;
+    }
   }
   const dayaKw = state.config.daya_pompa_watt / 1000;
-  const kWh = (liveTotalOn/3600000) * dayaKw;
+  const kWh = ((liveWbpMs + liveLwbpMs)/3600000) * dayaKw;
   const rupiah = (liveWbpMs/3600000) * dayaKw * state.config.tarif_wbp + (liveLwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
   document.getElementById('kwhValue').textContent = kWh.toFixed(2) + ' kWh';
   document.getElementById('rupiahValue').textContent = 'Rp ' + Math.round(rupiah).toLocaleString('id-ID');
+  document.getElementById('meteringResetInfo').textContent = state.meteringResetAt ? `Dihitung sejak: ${fmtDateTime(state.meteringResetAt)}` : 'Belum pernah direset';
 }
 
 async function fetchAndRender(){
@@ -616,8 +647,8 @@ async function fetchAndRender(){
     await fetchDeviceStatus(profile);
     state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
     await fetchResetPoint(profile);
-    await fetchRatioResetPoint(profile);
     await fetchMonthlyResetPoint(profile);
+    await fetchMeteringResetPoint(profile);
 
     const events = await fetchEvents(profile);
     computeMetrics(events);
@@ -671,17 +702,17 @@ document.getElementById('resetBtn').addEventListener('click', async () => {
   } catch(err){ alert('Gagal mereset total. Coba lagi.'); }
 });
 
-document.getElementById('ratioResetBtn').addEventListener('click', async () => {
+document.getElementById('meteringResetBtn').addEventListener('click', async () => {
   const profile = PUMPS[activePump];
-  const yakin = confirm(`Reset rasio operasi ${profile.label} sekarang?`);
+  const yakin = confirm(`Reset Virtual Metering ${profile.label}? Estimasi kWh/Rupiah kumulatif akan mulai dihitung ulang dari sekarang.`);
   if(!yakin) return;
   try{
-    const res = await fetch(`${REST}/${profile.ratioReset}?${profile.ratioResetFilter}`, {
-      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(profile.ratioResetPk)
+    const res = await fetch(`${REST}/${profile.meteringReset}?${profile.meteringResetFilter}`, {
+      method: 'PATCH', headers: { ...HEADERS, "Prefer": "return=minimal" }, body: JSON.stringify(profile.meteringResetPk)
     });
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
-  } catch(err){ alert('Gagal mereset rasio. Coba lagi.'); }
+  } catch(err){ alert('Gagal mereset virtual metering. Coba lagi.'); }
 });
 
 document.getElementById('monthlyResetBtn').addEventListener('click', async () => {
