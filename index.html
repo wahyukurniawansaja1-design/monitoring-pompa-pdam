@@ -122,7 +122,7 @@
     <div class="brand">
       <div class="brand-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 2v6M12 16v6M2 12h6M16 12h6" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>
       <div>
-        <h1>Monitoring Pompa PDAM  Unit Kuwak</h1>
+        <h1>Monitoring Pompa PDAM Unit Kuwak</h1>
         <div class="subtitle">Sistem Produksi Air &middot; Akses Jarak Jauh</div>
       </div>
     </div>
@@ -194,15 +194,6 @@
     </div>
     <button class="save-btn" id="saveConfigBtn">Simpan konfigurasi</button>
     <div class="save-note" id="configNote"></div>
-  </div>
-
-  <div class="config" style="margin-top:14px;">
-    <h3 style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-dim); margin:0; display:flex; align-items:center; gap:7px;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;opacity:0.65;"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
-      Tren Biaya Harian Bulan Ini
-    </h3>
-    <div class="subtitle" style="margin-top:4px;">Estimasi biaya listrik per hari, arahkan kursor ke batang untuk detail</div>
-    <div id="trendChart" style="margin-top:14px;"></div>
   </div>
 
   <div class="config" style="margin-top:14px;">
@@ -512,41 +503,11 @@ function computeMonthlyHistory(events){
   return { rows, totalKwh, totalRupiah };
 }
 
-function renderTrendChart(rows){
-  const container = document.getElementById('trendChart');
-  if(!rows || rows.length === 0){
-    container.innerHTML = '<div class="subtitle">Belum ada data bulan ini.</div>';
-    return;
-  }
-  const asc = [...rows].sort((a,b) => a.dayStart - b.dayStart);
-  const maxVal = Math.max(...asc.map(r => r.rupiah), 1);
-  const W = 800, H = 200, padL = 8, padB = 24, padT = 12;
-  const chartW = W - padL*2;
-  const gap = 4;
-  const barW = Math.max(6, chartW/asc.length - gap);
-  const showLabelEvery = asc.length <= 12 ? 1 : Math.ceil(asc.length/10);
-
-  let bars = '';
-  asc.forEach((r, i) => {
-    const h = Math.max(2, (r.rupiah/maxVal) * (H - padB - padT));
-    const x = padL + i*(barW+gap);
-    const y = H - padB - h;
-    const tgl = new Date(r.dayStart).getDate();
-    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="#2E5FE8" opacity="0.85"><title>Tanggal ${tgl}: Rp ${Math.round(r.rupiah).toLocaleString('id-ID')} (${r.kWh.toFixed(2)} kWh)</title></rect>`;
-    if(i % showLabelEvery === 0){
-      bars += `<text x="${(x+barW/2).toFixed(1)}" y="${H-6}" text-anchor="middle" font-size="9" font-family="IBM Plex Mono, monospace" fill="#6B7C99">${tgl}</text>`;
-    }
-  });
-
-  container.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" style="overflow:visible; display:block;">${bars}</svg>`;
-}
-
 function renderMonthlyHistory(events){
   const { rows, totalKwh, totalRupiah } = computeMonthlyHistory(events);
   document.getElementById('monthlyTotal').textContent =
     `Total bulan ini: ${totalKwh.toFixed(2)} kWh (~Rp ${Math.round(totalRupiah).toLocaleString('id-ID')})`;
   document.getElementById('monthlyResetInfo').textContent = state.monthlyResetAt ? `Dihitung sejak: ${fmtDateTime(state.monthlyResetAt)}` : 'Belum pernah direset';
-  renderTrendChart(rows);
 
   const body = document.getElementById('monthlyBody');
   if(rows.length === 0){ body.innerHTML = '<tr><td colspan="4">Belum ada data bulan ini.</td></tr>'; return; }
