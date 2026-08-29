@@ -6,6 +6,7 @@
 <title>Monitoring Pompa PDAM</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg: #EEF3FA; --card: #FFFFFF; --border: #E1E9F4;
@@ -132,7 +133,13 @@
 
 <div class="wrap">
 
-  <div class="tabs" id="tabBar"></div>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+    <div class="tabs" id="tabBar" style="margin-bottom:0;"></div>
+    <button class="save-btn" id="exportBtn" style="margin-top:0; display:flex; align-items:center; gap:6px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+      Export Excel
+    </button>
+  </div>
 
   <div class="banner" id="errorBanner"></div>
 
@@ -157,6 +164,7 @@
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>Total Durasi Kumulatif</h3>
       <div class="row"><span>Total ON</span><span class="val blue" id="totalOn">-</span></div>
       <div class="row"><span>Total OFF</span><span class="val off" id="totalOff">-</span></div>
+      <div class="row"><span>Volume Air</span><span class="val blue" id="volumeAir">- L</span></div>
       <div class="subtitle" id="resetInfo" style="margin-top:8px;">-</div>
       <button class="save-btn" id="resetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Total</button>
     </div>
@@ -187,6 +195,7 @@
     <div class="subtitle" style="margin-top:4px;">Tarif dihitung otomatis mengikuti jam PLN: WBP 17.00-22.00, LWBP 22.00-17.00</div>
     <div class="config-grid">
       <div class="field"><label>Daya pompa (Watt)</label><input type="number" id="cfgDaya"></div>
+      <div class="field"><label>Debit air (Liter/detik)</label><input type="number" step="0.01" id="cfgDebit"></div>
       <div class="field"><label>Tarif WBP 17-22 (Rp/kWh)</label><input type="number" id="cfgTarifWbp"></div>
       <div class="field"><label>Tarif LWBP 22-17 (Rp/kWh)</label><input type="number" id="cfgTarifLwbp"></div>
       <div class="field"><label>Batas short cycling (kali/jam)</label><input type="number" id="cfgShort"></div>
@@ -203,7 +212,7 @@
     <button class="save-btn" id="monthlyResetBtn" style="margin-top:10px; background:var(--red); font-size:11.5px; padding:7px 14px;">Reset Riwayat Bulanan</button>
     <div class="history-scroll" style="margin-top:10px;">
       <table class="history-table">
-        <thead><tr><th>Tanggal</th><th>Durasi ON</th><th>Energi</th><th>Estimasi Biaya</th></tr></thead>
+        <thead><tr><th>Tanggal</th><th>Durasi ON</th><th>Energi</th><th>Estimasi Biaya</th><th>Volume Air</th></tr></thead>
         <tbody id="monthlyBody"><tr><td colspan="4">Memuat...</td></tr></tbody>
       </table>
     </div>
@@ -273,13 +282,14 @@ const PUMPS = {
 };
 
 let activePump = 'pompa_1';
+let lastEvents = [];
 function freshState(){
   return {
     currentStatus: null, currentStart: null,
     totalOnMsBase: 0, totalOffMsBase: 0,
     wbpOnMsBase: 0, lwbpOnMsBase: 0,
     lastOn: null, lastOff: null,
-    config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480 },
+    config: { daya_pompa_watt: 750, tarif_wbp: 1444, tarif_lwbp: 974, batas_short_cycling: 6, batas_over_running: 480, debit_liter_per_detik: 1 },
     alerts: [], lastSeen: null, deviceOnline: null,
     resetAt: null, monthlyResetAt: null, meteringResetAt: null
   };
@@ -366,9 +376,20 @@ async function fetchMeteringResetPoint(profile){
   if(rows.length > 0) state.meteringResetAt = new Date(rows[0].reset_at);
 }
 async function fetchEvents(profile){
-  const res = await fetch(`${REST}/${profile.events}?select=*&order=event_time.asc&limit=5000${profile.eventsFilter}`, { headers: HEADERS });
-  if(!res.ok) throw new Error(`Gagal mengambil ${profile.events} (cek tabel & RLS policy)`);
-  return await res.json();
+  // Ambil SEMUA baris tanpa batas, lewat beberapa kali permintaan bertahap (pagination) -
+  // supaya tidak ada histori yang pernah "hilang" dari tampilan, berapa pun banyaknya data
+  const batchSize = 1000;
+  let allRows = [];
+  let offset = 0;
+  while(true){
+    const res = await fetch(`${REST}/${profile.events}?select=*&order=event_time.asc&limit=${batchSize}&offset=${offset}${profile.eventsFilter}`, { headers: HEADERS });
+    if(!res.ok) throw new Error(`Gagal mengambil ${profile.events} (cek tabel & RLS policy)`);
+    const rows = await res.json();
+    allRows = allRows.concat(rows);
+    if(rows.length < batchSize) break;
+    offset += batchSize;
+  }
+  return allRows;
 }
 
 function computeMetrics(events){
@@ -454,6 +475,47 @@ function computeMetrics(events){
 
 // Mengelompokkan waktu ON per hari kalender (lokal), lalu hitung kWh & biaya per hari -
 // untuk riwayat harian yang mudah dibaca per bulan
+// Sama seperti computeMonthlyHistory, tapi TANPA batas bulan dan TANPA clamp reset -
+// mencakup seluruh histori sejak ESP32 pertama kali kirim data. Dipakai khusus untuk export Excel.
+function computeAllDailyHistory(events){
+  if(!events || events.length === 0) return [];
+  const now = new Date();
+  const dailyMap = {};
+
+  function addToDay(startMs, endMs){
+    let cursor = startMs; let guard = 0;
+    while(cursor < endMs && guard < 5000){
+      guard++;
+      const d = new Date(cursor);
+      const dayStart = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const nextDay = dayStart + 24*3600000;
+      const segEnd = Math.min(endMs, nextDay);
+      const split = splitByTariffPeriod(cursor, segEnd);
+      if(!dailyMap[dayStart]) dailyMap[dayStart] = { onMs: 0, wbpMs: 0, lwbpMs: 0, dayStart };
+      dailyMap[dayStart].onMs += (segEnd - cursor);
+      dailyMap[dayStart].wbpMs += split.wbpMs;
+      dailyMap[dayStart].lwbpMs += split.lwbpMs;
+      cursor = segEnd;
+    }
+  }
+
+  for(let i=0;i<events.length;i++){
+    if(events[i].event_type !== 'ON') continue;
+    const start = new Date(events[i].event_time).getTime();
+    const end = (i+1 < events.length) ? new Date(events[i+1].event_time).getTime() : now.getTime();
+    addToDay(start, end);
+  }
+
+  const dayaKw = state.config.daya_pompa_watt / 1000;
+  const debit = state.config.debit_liter_per_detik || 0;
+  return Object.values(dailyMap).map(d => {
+    const kWh = (d.onMs/3600000) * dayaKw;
+    const rupiah = (d.wbpMs/3600000) * dayaKw * state.config.tarif_wbp + (d.lwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
+    const volumeLiter = (d.onMs/1000) * debit;
+    return { dayStart: d.dayStart, onMs: d.onMs, kWh, rupiah, volumeLiter };
+  }).sort((a,b) => a.dayStart - b.dayStart);
+}
+
 function computeMonthlyHistory(events){
   if(!events || events.length === 0) return { rows: [], totalKwh: 0, totalRupiah: 0 };
   const now = new Date();
@@ -487,13 +549,15 @@ function computeMonthlyHistory(events){
   }
 
   const dayaKw = state.config.daya_pompa_watt / 1000;
+  const debit = state.config.debit_liter_per_detik || 0;
   const bulanIni = now.getMonth(), tahunIni = now.getFullYear();
   let totalKwh = 0, totalRupiah = 0;
 
   const rows = Object.values(dailyMap).map(d => {
     const kWh = (d.onMs/3600000) * dayaKw;
     const rupiah = (d.wbpMs/3600000) * dayaKw * state.config.tarif_wbp + (d.lwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
-    return { dayStart: d.dayStart, onMs: d.onMs, kWh, rupiah };
+    const volumeLiter = (d.onMs/1000) * debit;
+    return { dayStart: d.dayStart, onMs: d.onMs, kWh, rupiah, volumeLiter };
   }).filter(r => {
     const dd = new Date(r.dayStart);
     return dd.getMonth() === bulanIni && dd.getFullYear() === tahunIni;
@@ -510,10 +574,10 @@ function renderMonthlyHistory(events){
   document.getElementById('monthlyResetInfo').textContent = state.monthlyResetAt ? `Dihitung sejak: ${fmtDateTime(state.monthlyResetAt)}` : 'Belum pernah direset';
 
   const body = document.getElementById('monthlyBody');
-  if(rows.length === 0){ body.innerHTML = '<tr><td colspan="4">Belum ada data bulan ini.</td></tr>'; return; }
+  if(rows.length === 0){ body.innerHTML = '<tr><td colspan="5">Belum ada data bulan ini.</td></tr>'; return; }
   body.innerHTML = rows.map(r => {
     const tgl = new Date(r.dayStart).toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
-    return `<tr><td>${tgl}</td><td>${fmtDuration(r.onMs)}</td><td>${r.kWh.toFixed(2)} kWh</td><td>Rp ${Math.round(r.rupiah).toLocaleString('id-ID')}</td></tr>`;
+    return `<tr><td>${tgl}</td><td>${fmtDuration(r.onMs)}</td><td>${r.kWh.toFixed(2)} kWh</td><td>Rp ${Math.round(r.rupiah).toLocaleString('id-ID')}</td><td>${r.volumeLiter.toLocaleString('id-ID', { maximumFractionDigits: 1 })} L</td></tr>`;
   }).join('');
 }
 
@@ -542,6 +606,7 @@ function renderStatic(){
   }
 
   if(document.activeElement.id !== 'cfgDaya') document.getElementById('cfgDaya').value = state.config.daya_pompa_watt;
+  if(document.activeElement.id !== 'cfgDebit') document.getElementById('cfgDebit').value = state.config.debit_liter_per_detik;
   if(document.activeElement.id !== 'cfgTarifWbp') document.getElementById('cfgTarifWbp').value = state.config.tarif_wbp;
   if(document.activeElement.id !== 'cfgTarifLwbp') document.getElementById('cfgTarifLwbp').value = state.config.tarif_lwbp;
   if(document.activeElement.id !== 'cfgShort') document.getElementById('cfgShort').value = state.config.batas_short_cycling;
@@ -583,6 +648,9 @@ function renderLive(){
   document.getElementById('totalOn').textContent = fmtDuration(liveTotalOn);
   document.getElementById('totalOff').textContent = fmtDuration(liveTotalOff);
 
+  const volumeLiter = (liveTotalOn/1000) * (state.config.debit_liter_per_detik || 0);
+  document.getElementById('volumeAir').textContent = volumeLiter.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' L';
+
   let liveWbpMs = state.wbpOnMsBase || 0;
   let liveLwbpMs = state.lwbpOnMsBase || 0;
   if(state.currentStatus){
@@ -612,6 +680,7 @@ async function fetchAndRender(){
     await fetchMeteringResetPoint(profile);
 
     const events = await fetchEvents(profile);
+    lastEvents = events;
     computeMetrics(events);
     renderHistoryTable(events);
     renderMonthlyHistory(events);
@@ -634,6 +703,7 @@ document.getElementById('saveConfigBtn').addEventListener('click', async () => {
   const note = document.getElementById('configNote');
   const body = {
     daya_pompa_watt: parseFloat(document.getElementById('cfgDaya').value),
+    debit_liter_per_detik: parseFloat(document.getElementById('cfgDebit').value),
     tarif_wbp: parseFloat(document.getElementById('cfgTarifWbp').value),
     tarif_lwbp: parseFloat(document.getElementById('cfgTarifLwbp').value),
     batas_short_cycling: parseInt(document.getElementById('cfgShort').value),
@@ -687,6 +757,77 @@ document.getElementById('monthlyResetBtn').addEventListener('click', async () =>
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
   } catch(err){ alert('Gagal mereset riwayat bulanan. Coba lagi.'); }
+});
+
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const profile = PUMPS[activePump];
+
+  const ringkasan = [
+    ['Laporan Monitoring Pompa PDAM'],
+    ['Pompa', profile.label],
+    ['Tanggal Ekspor', fmtDateTime(new Date())],
+    [],
+    ['STATUS SAAT INI'],
+    ['Status', document.getElementById('statusValue').textContent],
+    ['Keterangan', document.getElementById('durationLive').textContent],
+    [],
+    ['TOTAL DURASI KUMULATIF'],
+    ['Total ON', document.getElementById('totalOn').textContent],
+    ['Total OFF', document.getElementById('totalOff').textContent],
+    ['Volume Air', document.getElementById('volumeAir').textContent],
+    ['Dihitung Sejak', document.getElementById('resetInfo').textContent],
+    [],
+    ['VIRTUAL METERING - KUMULATIF'],
+    ['Estimasi Energi (kWh)', document.getElementById('kwhValue').textContent],
+    ['Estimasi Biaya (Rp)', document.getElementById('rupiahValue').textContent],
+    ['Dihitung Sejak', document.getElementById('meteringResetInfo').textContent],
+    [],
+    ['VIRTUAL METERING - 24 JAM TERAKHIR'],
+    ['Estimasi Energi (kWh)', document.getElementById('kwh24hValue').textContent],
+    ['Estimasi Biaya (Rp)', document.getElementById('rupiah24hValue').textContent],
+    [],
+    ['KONFIGURASI'],
+    ['Daya Pompa (Watt)', state.config.daya_pompa_watt],
+    ['Debit Air (Liter/detik)', state.config.debit_liter_per_detik],
+    ['Tarif WBP 17.00-22.00 (Rp/kWh)', state.config.tarif_wbp],
+    ['Tarif LWBP 22.00-17.00 (Rp/kWh)', state.config.tarif_lwbp]
+  ];
+  const wsRingkasan = XLSX.utils.aoa_to_sheet(ringkasan);
+  wsRingkasan['!cols'] = [{ wch: 32 }, { wch: 26 }];
+
+  const historyRows = lastEvents.slice().reverse().map((e, i) => {
+    const d = new Date(e.event_time);
+    return [
+      i + 1,
+      e.event_type === 'ON' ? 'NYALA' : 'MATI',
+      d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+      d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    ];
+  });
+  const wsRiwayat = XLSX.utils.aoa_to_sheet([['No', 'Status', 'Tanggal', 'Jam'], ...historyRows]);
+  wsRiwayat['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }];
+
+  const dailyAsc = computeAllDailyHistory(lastEvents);
+  const dailyTableRows = dailyAsc.map(r => [
+    new Date(r.dayStart).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    fmtDuration(r.onMs),
+    Number(r.kWh.toFixed(2)),
+    Math.round(r.rupiah),
+    Number(r.volumeLiter.toFixed(1))
+  ]);
+  const wsKwhHarian = XLSX.utils.aoa_to_sheet([
+    ['Tanggal', 'Durasi ON', 'Energi (kWh)', 'Estimasi Biaya (Rp)', 'Volume Air (Liter)'],
+    ...dailyTableRows
+  ]);
+  wsKwhHarian['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsRingkasan, 'Ringkasan');
+  XLSX.utils.book_append_sheet(wb, wsKwhHarian, 'Rincian kWh Harian');
+  XLSX.utils.book_append_sheet(wb, wsRiwayat, 'Riwayat Status Pompa');
+
+  const namaFile = `Laporan_${profile.label.replace(' ', '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  XLSX.writeFile(wb, namaFile);
 });
 
 renderTabs();
