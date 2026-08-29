@@ -136,13 +136,9 @@
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
     <div class="tabs" id="tabBar" style="margin-bottom:0;"></div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="save-btn" id="exportBtn" style="margin-top:0; display:flex; align-items:center; gap:6px;">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-        Export Excel
-      </button>
       <button class="save-btn" id="exportAllBtn" style="margin-top:0; background:var(--blue-deep); display:flex; align-items:center; gap:6px;">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-        Export Semua Pompa
+        Export Data
       </button>
     </div>
   </div>
@@ -288,7 +284,6 @@ const PUMPS = {
 };
 
 let activePump = 'pompa_1';
-let lastEvents = [];
 function freshState(){
   return {
     currentStatus: null, currentStart: null,
@@ -736,7 +731,6 @@ async function fetchAndRender(){
     await fetchMeteringResetPoint(profile);
 
     const events = await fetchEvents(profile);
-    lastEvents = events;
     computeMetrics(events);
     renderHistoryTable(events);
     renderMonthlyHistory(events);
@@ -813,77 +807,6 @@ document.getElementById('monthlyResetBtn').addEventListener('click', async () =>
     if(!res.ok) throw new Error('Gagal reset');
     await fetchAndRender();
   } catch(err){ alert('Gagal mereset riwayat bulanan. Coba lagi.'); }
-});
-
-document.getElementById('exportBtn').addEventListener('click', () => {
-  const profile = PUMPS[activePump];
-
-  const ringkasan = [
-    ['Laporan Monitoring Pompa PDAM'],
-    ['Pompa', profile.label],
-    ['Tanggal Ekspor', fmtDateTime(new Date())],
-    [],
-    ['STATUS SAAT INI'],
-    ['Status', document.getElementById('statusValue').textContent],
-    ['Keterangan', document.getElementById('durationLive').textContent],
-    [],
-    ['TOTAL DURASI KUMULATIF'],
-    ['Total ON', document.getElementById('totalOn').textContent],
-    ['Total OFF', document.getElementById('totalOff').textContent],
-    ['Volume Air', document.getElementById('volumeAir').textContent],
-    ['Dihitung Sejak', document.getElementById('resetInfo').textContent],
-    [],
-    ['VIRTUAL METERING - KUMULATIF'],
-    ['Estimasi Energi (kWh)', document.getElementById('kwhValue').textContent],
-    ['Estimasi Biaya (Rp)', document.getElementById('rupiahValue').textContent],
-    ['Dihitung Sejak', document.getElementById('meteringResetInfo').textContent],
-    [],
-    ['VIRTUAL METERING - 24 JAM TERAKHIR'],
-    ['Estimasi Energi (kWh)', document.getElementById('kwh24hValue').textContent],
-    ['Estimasi Biaya (Rp)', document.getElementById('rupiah24hValue').textContent],
-    [],
-    ['KONFIGURASI'],
-    ['Daya Pompa (Watt)', state.config.daya_pompa_watt],
-    ['Debit Air (Liter/detik)', state.config.debit_liter_per_detik],
-    ['Tarif WBP 17.00-22.00 (Rp/kWh)', state.config.tarif_wbp],
-    ['Tarif LWBP 22.00-17.00 (Rp/kWh)', state.config.tarif_lwbp]
-  ];
-  const wsRingkasan = XLSX.utils.aoa_to_sheet(ringkasan);
-  wsRingkasan['!cols'] = [{ wch: 32 }, { wch: 26 }];
-
-  const historyRows = lastEvents.slice().reverse().map((e, i) => {
-    const d = new Date(e.event_time);
-    return [
-      i + 1,
-      e.event_type === 'ON' ? 'NYALA' : 'MATI',
-      d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-      d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-    ];
-  });
-  const wsRiwayat = XLSX.utils.aoa_to_sheet([['No', 'Status', 'Tanggal', 'Jam'], ...historyRows]);
-  wsRiwayat['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }];
-
-  const dailyAsc = computeAllDailyHistory(lastEvents);
-  const dailyTableRows = dailyAsc.map(r => [
-    new Date(r.dayStart).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-    fmtDuration(r.onMs),
-    Number(r.kWh.toFixed(2)),
-    Math.round(r.rupiah),
-    Number(r.volumeLiter.toFixed(1))
-  ]);
-  const wsKwhHarian = XLSX.utils.aoa_to_sheet([
-    ['Tanggal', 'Durasi ON', 'Energi (kWh)', 'Estimasi Biaya (Rp)', 'Volume Air (Liter)'],
-    ...dailyTableRows
-  ]);
-  wsKwhHarian['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
-
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, wsRingkasan, 'Ringkasan');
-  XLSX.utils.book_append_sheet(wb, wsKwhHarian, 'Rincian kWh Harian');
-  XLSX.utils.book_append_sheet(wb, wsRiwayat, 'Riwayat Status Pompa');
-
-  const namaFile = `Laporan_${profile.label.replace(' ', '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  XLSX.writeFile(wb, namaFile);
 });
 
 document.getElementById('exportAllBtn').addEventListener('click', async () => {
