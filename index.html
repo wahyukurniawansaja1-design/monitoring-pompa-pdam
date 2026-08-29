@@ -135,10 +135,16 @@
 
   <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
     <div class="tabs" id="tabBar" style="margin-bottom:0;"></div>
-    <button class="save-btn" id="exportBtn" style="margin-top:0; display:flex; align-items:center; gap:6px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
-      Export Excel
-    </button>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="save-btn" id="exportBtn" style="margin-top:0; display:flex; align-items:center; gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        Export Excel
+      </button>
+      <button class="save-btn" id="exportAllBtn" style="margin-top:0; background:var(--blue-deep); display:flex; align-items:center; gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+        Export Semua Pompa
+      </button>
+    </div>
   </div>
 
   <div class="banner" id="errorBanner"></div>
@@ -477,6 +483,56 @@ function computeMetrics(events){
 // untuk riwayat harian yang mudah dibaca per bulan
 // Sama seperti computeMonthlyHistory, tapi TANPA batas bulan dan TANPA clamp reset -
 // mencakup seluruh histori sejak ESP32 pertama kali kirim data. Dipakai khusus untuk export Excel.
+// Menghitung ringkasan status/metering langsung dari `state`, tanpa baca dari DOM -
+// dipakai saat export beberapa pompa sekaligus (bergantian, tanpa mengganggu tampilan aktif)
+function computeLiveSummary(){
+  const now = new Date();
+  const referenceNow = (state.deviceOnline === false && state.lastSeen) ? state.lastSeen : now;
+  const durMs = referenceNow - state.currentStart;
+  const resetAtMs = state.resetAt ? state.resetAt.getTime() : 0;
+  const contribMs = Math.max(0, referenceNow.getTime() - Math.max(state.currentStart.getTime(), resetAtMs));
+  const liveTotalOn = state.totalOnMsBase + (state.currentStatus ? contribMs : 0);
+  const liveTotalOff = state.totalOffMsBase + (!state.currentStatus ? contribMs : 0);
+  const volumeLiter = (liveTotalOn/1000) * (state.config.debit_liter_per_detik || 0);
+
+  let liveWbpMs = state.wbpOnMsBase || 0;
+  let liveLwbpMs = state.lwbpOnMsBase || 0;
+  if(state.currentStatus){
+    const meteringResetAtMs = state.meteringResetAt ? state.meteringResetAt.getTime() : 0;
+    const openStartMs = Math.max(state.currentStart.getTime(), meteringResetAtMs);
+    if(referenceNow.getTime() > openStartMs){
+      const split = splitByTariffPeriod(openStartMs, referenceNow.getTime());
+      liveWbpMs += split.wbpMs; liveLwbpMs += split.lwbpMs;
+    }
+  }
+  const dayaKw = state.config.daya_pompa_watt / 1000;
+  const kWh = ((liveWbpMs + liveLwbpMs)/3600000) * dayaKw;
+  const rupiah = (liveWbpMs/3600000) * dayaKw * state.config.tarif_wbp + (liveLwbpMs/3600000) * dayaKw * state.config.tarif_lwbp;
+
+  let statusText, durationText;
+  if(state.deviceOnline === false){
+    statusText = 'TIDAK DIKETAHUI';
+    durationText = `data terakhir: ${fmtDateTime(state.lastSeen)}`;
+  } else if(state.currentStatus){
+    statusText = 'NYALA'; durationText = `berjalan ${fmtDuration(durMs)}`;
+  } else {
+    statusText = 'MATI'; durationText = `berjalan ${fmtDuration(durMs)}`;
+  }
+
+  return {
+    statusText, durationText,
+    totalOnText: fmtDuration(liveTotalOn),
+    totalOffText: fmtDuration(liveTotalOff),
+    volumeText: volumeLiter.toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' L',
+    kwhText: kWh.toFixed(2) + ' kWh',
+    rupiahText: 'Rp ' + Math.round(rupiah).toLocaleString('id-ID'),
+    kwh24hText: (state.kwh24h || 0).toFixed(2) + ' kWh',
+    rupiah24hText: 'Rp ' + Math.round(state.rupiah24h || 0).toLocaleString('id-ID'),
+    resetText: state.resetAt ? `Dihitung sejak: ${fmtDateTime(state.resetAt)}` : 'Belum pernah direset',
+    meteringResetText: state.meteringResetAt ? `Dihitung sejak: ${fmtDateTime(state.meteringResetAt)}` : 'Belum pernah direset'
+  };
+}
+
 function computeAllDailyHistory(events){
   if(!events || events.length === 0) return [];
   const now = new Date();
@@ -828,6 +884,105 @@ document.getElementById('exportBtn').addEventListener('click', () => {
 
   const namaFile = `Laporan_${profile.label.replace(' ', '_')}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   XLSX.writeFile(wb, namaFile);
+});
+
+document.getElementById('exportAllBtn').addEventListener('click', async () => {
+  const originalPump = activePump;
+  const btn = document.getElementById('exportAllBtn');
+  const originalHtml = btn.innerHTML;
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+
+  try {
+    const wb = XLSX.utils.book_new();
+
+    for (const pumpId of Object.keys(PUMPS)) {
+      const profile = PUMPS[pumpId];
+      state = freshState();
+
+      await fetchConfig(profile);
+      await fetchDeviceStatus(profile);
+      state.deviceOnline = state.lastSeen ? ((new Date() - state.lastSeen) < OFFLINE_THRESHOLD_MS) : false;
+      await fetchResetPoint(profile);
+      await fetchMeteringResetPoint(profile);
+
+      const events = await fetchEvents(profile);
+      computeMetrics(events);
+      const s = computeLiveSummary();
+      const shortLabel = profile.label.replace(' ', '');
+
+      const ringkasan = [
+        ['Laporan Monitoring Pompa PDAM'],
+        ['Pompa', profile.label],
+        ['Tanggal Ekspor', fmtDateTime(new Date())],
+        [],
+        ['STATUS SAAT INI'],
+        ['Status', s.statusText],
+        ['Keterangan', s.durationText],
+        [],
+        ['TOTAL DURASI KUMULATIF'],
+        ['Total ON', s.totalOnText],
+        ['Total OFF', s.totalOffText],
+        ['Volume Air', s.volumeText],
+        ['Dihitung Sejak', s.resetText],
+        [],
+        ['VIRTUAL METERING - KUMULATIF'],
+        ['Estimasi Energi (kWh)', s.kwhText],
+        ['Estimasi Biaya (Rp)', s.rupiahText],
+        ['Dihitung Sejak', s.meteringResetText],
+        [],
+        ['VIRTUAL METERING - 24 JAM TERAKHIR'],
+        ['Estimasi Energi (kWh)', s.kwh24hText],
+        ['Estimasi Biaya (Rp)', s.rupiah24hText],
+        [],
+        ['KONFIGURASI'],
+        ['Daya Pompa (Watt)', state.config.daya_pompa_watt],
+        ['Debit Air (Liter/detik)', state.config.debit_liter_per_detik],
+        ['Tarif WBP 17.00-22.00 (Rp/kWh)', state.config.tarif_wbp],
+        ['Tarif LWBP 22.00-17.00 (Rp/kWh)', state.config.tarif_lwbp]
+      ];
+      const wsRingkasan = XLSX.utils.aoa_to_sheet(ringkasan);
+      wsRingkasan['!cols'] = [{ wch: 32 }, { wch: 26 }];
+      XLSX.utils.book_append_sheet(wb, wsRingkasan, `Ringkasan ${shortLabel}`);
+
+      const dailyAsc = computeAllDailyHistory(events);
+      const dailyRows = dailyAsc.map(r => [
+        new Date(r.dayStart).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+        fmtDuration(r.onMs),
+        Number(r.kWh.toFixed(2)),
+        Math.round(r.rupiah),
+        Number(r.volumeLiter.toFixed(1))
+      ]);
+      const wsHarian = XLSX.utils.aoa_to_sheet([
+        ['Tanggal', 'Durasi ON', 'Energi (kWh)', 'Estimasi Biaya (Rp)', 'Volume Air (Liter)'],
+        ...dailyRows
+      ]);
+      wsHarian['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 18 }, { wch: 16 }];
+      XLSX.utils.book_append_sheet(wb, wsHarian, `kWh Harian ${shortLabel}`);
+
+      const historyRows = events.slice().reverse().map((e, i) => {
+        const d = new Date(e.event_time);
+        return [
+          i + 1,
+          e.event_type === 'ON' ? 'NYALA' : 'MATI',
+          d.toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+          d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        ];
+      });
+      const wsRiwayat = XLSX.utils.aoa_to_sheet([['No', 'Status', 'Tanggal', 'Jam'], ...historyRows]);
+      wsRiwayat['!cols'] = [{ wch: 6 }, { wch: 10 }, { wch: 14 }, { wch: 12 }];
+      XLSX.utils.book_append_sheet(wb, wsRiwayat, `Riwayat ${shortLabel}`);
+    }
+
+    XLSX.writeFile(wb, `Laporan_Semua_Pompa_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  } catch (err) {
+    alert('Gagal export semua pompa: ' + err.message);
+  } finally {
+    activePump = originalPump;
+    btn.disabled = false;
+    btn.innerHTML = originalHtml;
+    await fetchAndRender();
+  }
 });
 
 renderTabs();
